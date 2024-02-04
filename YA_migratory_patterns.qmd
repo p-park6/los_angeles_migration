@@ -10,7 +10,6 @@ editor: visual
 library(tidyverse)
 ```
 
-
 ```{r}
 #check out the data
 
@@ -24,4 +23,3 @@ View(od_race)
 View(od_inc)
 View(od_pooled)
 ```
-
