@@ -1,0 +1,224 @@
+---
+title: "visualization_creation"
+format: html
+editor: visual
+editor_options: 
+  chunk_output_type: console
+---
+
+# visualization of most populated cities per region
+
+
+What option do I plan to pursue?
+Restate my question
+
+# Load in libraries
+```{r}
+library(tidyverse)
+library(states)
+library(plotly)
+library(sunburstR)
+library(showtext)
+```
+
+```{r}
+#import texts from Google
+font_add_google(name = "Merriweather", family = "merri")
+
+showtext_auto()
+```
+
+
+
+## Load in Datasets
+```{r, message=FALSE}
+
+#read in data
+od <- read_csv("data/od.csv") #whole entire dataset combined into one
+od_race <- read_csv("data/od_race.csv") #dataset separated by race
+od_inc <- read_csv("data/od_inc.csv") #dataset separated by income percentiles
+od_pooled <- read_csv("data/od_pooled.csv") #dataset technically not 'separated' by a specific factor
+
+
+#view data: uncomment to view dataset
+# View(od)
+# View(od_race)
+# View(od_inc)
+# View(od_pooled)
+```
+
+## Data wrangling and cleaning
+
+Here I will reshape the datasets to what I would like to output on the graph. I'll go ahead and transform all four datasets for practice and to give me more flexibility for what I would like to create for my exploratory graphs.
+
+```{r}
+#create a new dataframe for state info
+state_info <- tibble(state.name, state.region, state.abb) %>% 
+  rename(d_state_name = state.name)
+```
+
+```{r}
+# Most popular cities not separated by a certain factor
+top_ten_pooled <- od_pooled %>% #using od_pooled
+  select(d_cz_name, d_state_name, n_tot_d, pool) %>%#select columns we are interested in, helps get rid of repeats
+  distinct() %>% #gets rid of repeats in the dataset
+  slice_max(n_tot_d, n = 10) %>%  #find the top 10 most popular cities if applicable
+  left_join(state_info, by = "d_state_name") #left join with state_info dataset to get regions of each state
+
+#replace na with Northeast
+top_ten_pooled$state.region <- top_ten_pooled$state.region %>% 
+  replace_na('Northeast')
+
+#replace na with dc
+top_ten_pooled$state.abb <- top_ten_pooled$state.abb %>% 
+  replace_na('DC')
+
+top_ten_pooled <- top_ten_pooled %>% 
+  unite("city_state", d_cz_name, state.abb, sep = "-", remove = FALSE)
+
+
+#view wrangled dataset: uncomment to view dataset
+#View(top_ten_pooled)
+```
+
+
+```{r}
+# Most popular cities separated by Race
+top_ten_race <- od_race %>% #using od_race
+  select(d_cz_name, d_state_name, n_tot_d, pool) %>% #select columns we are interested in, helps get rid of repeats
+  group_by(pool) %>% # grouping by pool (in this case it is race)
+  distinct() %>%  #gets rid of repeats in the dataset
+  slice_max(n_tot_d, n = 10) #find the top 10 most popular cities if applicable for each race
+
+
+#view wrangled dataset: uncomment to view dataset
+#View(top_ten_race)
+
+```
+
+```{r}
+# Most popular cities separated by income
+top_ten_inc <- od_inc %>% #using od_inc
+  select(d_cz_name, d_state_name, n_tot_d, pool) %>% #select columns we are interested in, helps get rid of repeats
+  group_by(pool) %>% # grouping by pool (in this case it is income percentiles)
+  distinct() %>%  #gets rid of repeats in the dataset
+  slice_max(n_tot_d, n = 10) #find the top 10 most popular cities if applicable for each income percentile
+
+
+#view wrangled dataset: uncomment to view dataset
+#View(top_ten_inc)
+```
+
+```{r}
+# Most popular cities separated by both race and income
+top_ten_overall <- od %>% #using od
+  select(d_cz_name, d_state_name, n_tot_d, pool) %>% #select columns we are interested in, helps get rid of repeats
+  group_by(pool) %>% # grouping by pool (in this case it is both race and income)
+  distinct() %>%  #gets rid of repeats in the dataset
+  slice_max(n_tot_d, n = 10) #find the top 10 most popular cities if applicable for race and income percentile
+
+
+#view wrangled dataset: uncomment to view dataset
+#View(top_ten_overall)
+```
+
+
+```{r}
+
+
+#Graph three: Top 10 Cities
+top_ten <- top_ten_pooled %>% 
+  mutate(d_cz_name = forcats::fct_reorder(city_state, desc(n_tot_d))) %>% 
+  ggplot(aes(x = city_state, 
+             y = n_tot_d)) +
+  geom_segment(aes(x=d_cz_name, xend=d_cz_name, y=0, yend=n_tot_d), 
+               size = ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), 3, 1.5), 
+               alpha = 1, 
+               color = ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), "#43896B","#6D5F67")) +
+  geom_point(size=ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), 6, 3), 
+             color=ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), "#43896B", "#1A4075"), 
+             fill=alpha("pink", 0.3), alpha=0.7, shape=21, stroke=2) +
+  geom_text(aes(label = n_tot_d), vjust = -1.2, family = "roboto condensed") +#vjust = 0.5, hjust = -0.25)+
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Top Ten Most Populated Cities",
+       x = "City Name",
+       y = "Total number of people", #could be changed to 'population
+       subtitle = "Population size per city, showing an approximate amount of people that are counted as residents",
+       caption = "Data Source: migrationpatterns.org") +
+    theme(axis.text.x = element_text(family = "roboto condensed", color = "grey30", size = 12, angle = 45, vjust = 1, hjust= 1), #change x axis font
+        axis.text.y = element_text(family = "roboto condensed", color = "grey30", size = 12), #change y axis font
+        plot.title = element_text(family = "merri", face = "bold", size = 35, color = "#201B22", hjust = 0), #change title font
+        plot.subtitle = element_text(family = "roboto condensed", color = "grey30", size = 12),
+        plot.caption = element_text(family = "roboto condensed", color = "grey30", size = 12),
+        axis.title.x = element_text(family = "roboto condensed", color = "grey30", size = 16),
+        axis.title.y = element_text(family = "roboto condensed", color = "grey30", size = 16),
+        panel.background = element_rect(fill = "white"), #change background of graph to white
+        panel.grid.major.y = element_line(color = "grey60", linetype = "13")) #change grid to only show x axis and have it a dotted line type
+
+top_ten_annt <- top_ten + annotate("text", x=grep("Los Angeles-CA", top_ten_pooled$city_state), y=top_ten_pooled$n_tot_d[which(top_ten_pooled$city_state=="Los Angeles-CA")]*1.2, 
+           label="Los Angeles has more residents than Boston, Atlanta, and Newark combined", 
+           color="#43896B", size=5 , angle=0, fontface="bold", hjust=0.1, vjust = 3.5)
+
+print(top_ten_annt)
+
+ggsave("top_ten_cities.png", plot = top_ten_annt, path = ("images"), width = 15.5, height = 8)
+```
+
+
+
+
+
+
+
+
+
+
+
+## Visual one with plotly
+```{r}
+
+fig <- plot_ly(
+  type = "sunburst",
+  labels = top_ten_pooled$state.region,
+  parents = top_ten_pooled$state.region,
+  values = top_ten_pooled$n_tot_d
+)
+ 
+fig
+
+
+
+
+
+fig <- plot_ly()
+
+
+fig <- fig %>% add_trace(
+
+  type='sunburst',
+
+  ids=df$ids,
+
+  labels=df$labels,
+
+  parents=df$parents,
+
+  domain=list(column=1),
+
+  maxdepth=2,
+
+  insidetextorientation='radial'
+
+)
+
+fig
+```
+
+
+## Visualization 2 with sunburstR
+```{r}
+sunburst(data = top_ten_pooled, legend = FALSE,
+         colors = c("D99527", "6F7239", "CE4B3C", "C8AC70", "018A9D"))
+```
+
+

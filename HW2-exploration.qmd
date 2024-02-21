@@ -4,8 +4,11 @@ subtitle: "Part II"
 author: "Patty Park"
 date: 2024-02-03
 toc: true
-format: html
+format: 
+  html:
+    embed-resources: true
 editor_options: 
+  
   chunk_output_type: console
 ---
 
@@ -131,7 +134,7 @@ print(top_ten_q_one)
 
 ```{r}
 #Graph three: Top 10 Cities
-top_ten_asian <- top_ten_pooled %>% 
+top_ten <- top_ten_pooled %>% 
   mutate(d_cz_name = forcats::fct_reorder(d_cz_name, desc(n_tot_d))) %>% 
   ggplot(aes(x = d_cz_name, 
              y = n_tot_d)) +
@@ -141,8 +144,40 @@ top_ten_asian <- top_ten_pooled %>%
        x = "City Name",
        y = "Total number of people")
 
-print(top_ten_asian)
+print(top_ten)
 ```
+
+```{r, include=FALSE}
+#can delete
+
+# Most popular cities not separated by a certain factor
+least_ten_pooled <- od_pooled %>% #using od_pooled
+  select(d_cz_name, d_state_name, n_tot_d, pool) %>% #select columns we are interested in, helps get rid of repeats 
+  group_by(d_state_name) %>% 
+  slice_min(n_tot_d, n = 10) %>%  #find the top 10 most popular cities if applicable
+  distinct() %>% 
+  ungroup() %>% 
+  slice_min(n_tot_d, n = 10) %>% 
+  uncount(n_tot_d)
+
+
+#view wrangled dataset: uncomment to view dataset
+#View(top_ten_pooled)
+
+
+least_ten <- least_ten_pooled %>% 
+  ggplot(aes(x = d_cz_name)) +
+  geom_bar(fill = 'red') +
+  labs(title = "Least populated Cities",
+       x = "City Name",
+       y = "Total number of people")
+
+print(least_ten)
+
+ggsave("least_populated_graphs.jpg", plot = least_ten, height = 5, width = 8, path = here::here("images"))
+
+```
+
 
 
 ## Questions:
