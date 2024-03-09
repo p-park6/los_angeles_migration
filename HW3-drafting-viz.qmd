@@ -1,65 +1,69 @@
 ---
-title: "HW3_visualization_creation"
-format: html
+title: "HW3 visualization creation"
+author: "Patty Park"
+date: "3/1/24"
+format:
+  html:
+    embed-resources: true
 editor: visual
 editor_options: 
   chunk_output_type: console
 ---
 
+```{r, echo=FALSE}
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+
 ## Questions
 
 ### Which option do you plan to pursue?
 
-  **Answer**: I plan to pursue option 2, where I will be answering one overarching questions and include three sub questions that relate to my original question.
+**Answer**: I plan to pursue option 2, where I will be answering one overarching questions and include three sub questions that relate to my original question.
 
 ### Restate your question(s). Has this changed at all since HW #1? If yes, how so?
 
-  **Answer**: My overarching questions that I will be asking is "What are the most populated cities in the US amongst the young population?". The three subquestions I will ask are:
-  1. What are the most popular cities per region (eg. West, South, etc.)
-  2. What are the most popular cities young people are moving to?
-  3. Where are people moving to Los Angeles from? (From my preliminary research, Los Angeles is the most populated city.)
-  
+**Answer**: My overarching questions that I will be asking is "What are the most populated cities in the US amongst the young population?". The three subquestions I will ask are: 1. What are the most popular cities per region (eg. West, South, etc.) 2. What are the most popular cities young people are moving to? 3. Where are people moving to Los Angeles from? (From my preliminary research, Los Angeles is the most populated city.)
+
 ### Explain which variables from your data set(s) you will use to answer your question(s).
 
-  **Answer**: I'll be exploring a number of datasets, all from my source https://migrationpatterns.org/. Each dataset covers a certain demographic: one on race, one on income quantile, one on both race and income quantile, and one overall not focusing on a demographic. Looking at the data and the metadata, no major data wrangling will need to be made. The only type of data wrangling I'll need for this project is to subset for the cities of interest related to my question. 
-  For my first question, I'll be using the `states` package to retrieve information on the region each state is residing in. I'll also be using the information containing the amount of people living in each city provided by the United States Census Bureau, from the dataset `od_pooled`. I'll be attaching the region information from `states` to the population dataset, relating to each state. After doing this, I'll have the necessary variables to create my chart. The variables that I will use to create my visualization are: state_region: the region that the state resides in, city_name: the city name, and n_tot_d: the total number of people living in that city.
-  For my second question, I'll be using the dataset `od_pooled` to create a visualization of where people are moving to. The only type of data wrangling that will be done for this question is trying to find the top n cities young adults are moving to. I'll be using the following variable to create my visualization: `d_cz_name`: the city's name and `n_tot_d`: total number of individuals who live in the city.
-  For my third question, I'll again be using the dataset `od_pooled`, and again be doing some light wrangling for the top n cities that moved to Los Angeles (our city of interest). I'll be using these variable to help me with the data visualization: `o_cz_name`: the city that the population is moving from, `d_cz_name`: the city that the population is moving to (in this case, all the entries will be Los Angeles), and 'n`: the number of individuals from origin city living in destination city.
-  
+**Answer**: I'll be exploring a number of datasets, all from my source https://migrationpatterns.org/. Each dataset covers a certain demographic: one on race, one on income quantile, one on both race and income quantile, and one overall not focusing on a demographic. Looking at the data and the metadata, no major data wrangling will need to be made. The only type of data wrangling I'll need for this project is to subset for the cities of interest related to my question. For my first question, I'll be using the `states` package to retrieve information on the region each state is residing in. I'll also be using the information containing the amount of people living in each city provided by the United States Census Bureau, from the dataset `od_pooled`. I'll be attaching the region information from `states` to the population dataset, relating to each state. After doing this, I'll have the necessary variables to create my chart. The variables that I will use to create my visualization are: state_region: the region that the state resides in, city_name: the city name, and n_tot_d: the total number of people living in that city. For my second question, I'll be using the dataset `od_pooled` to create a visualization of where people are moving to. The only type of data wrangling that will be done for this question is trying to find the top n cities young adults are moving to. I'll be using the following variable to create my visualization: `d_cz_name`: the city's name and `n_tot_d`: total number of individuals who live in the city. For my third question, I'll again be using the dataset `od_pooled`, and again be doing some light wrangling for the top n cities that moved to Los Angeles (our city of interest). I'll be using these variable to help me with the data visualization: `o_cz_name`: the city that the population is moving from, `d_cz_name`: the city that the population is moving to (in this case, all the entries will be Los Angeles), and 'n\`: the number of individuals from origin city living in destination city.
+
 ### Two data visualizations I would like to use in my graphs
 
-1. [https://clauswilke.com/dataviz/visualizing-amounts.html]
-  
-  In one of my graphs, I plan to create a lollipop visualization showing the top ten populated cities. Because I am showing amounts compared to each city, I need to find a good way to showcase these and explain to the reader why the number of people in these cities are much larger than they may think. In the link above, it goes to a webpage detailing solutions that may be beneficial to showcase amounts. One visualization that this webpage shows is a grouped barplot. ![](images/income-by-age-race-dodged-1.png){fig-alt="Figure shows barplot of the median income for each age group. The barplot is grouped by race per age group."}
-I'll most likely try to incorporate this in my own plot and see how that would look on a lollipop plot.
+1.  https://clauswilke.com/dataviz/visualizing-amounts.html
 
-2. [https://r-graph-gallery.com/connection-map.html]
+In one of my graphs, I plan to create a lollipop visualization showing the top ten populated cities. Because I am showing amounts compared to each city, I need to find a good way to showcase these and explain to the reader why the number of people in these cities are much larger than they may think. In the link above, it goes to a webpage detailing solutions that may be beneficial to showcase amounts. One visualization that this webpage shows is a grouped barplot. ![](images/income-by-age-race-dodged-1.png){fig-alt="Figure shows barplot of the median income for each age group. The barplot is grouped by race per age group."} I'll most likely try to incorporate this in my own plot and see how that would look on a lollipop plot.
 
-  Another graph I would like to create is a geospatial graph of the US young adults migratory patterns. Because I have data on where these young adults moved to, I would like to see what the top cities were that young adults moved away from, specifically to Los Angeles. ![](images/Surfer_travel.png){fig-alt="This is a connecting map of the whole world which shows a line from one location on the map to another location. This shows a person's who surfs footprint."}. The reader would be able to see what cities are most likely to move to LA. I would also like to put a percentage compared to that city's population to see how much in total moved away from that city to LA.
+2.  https://r-graph-gallery.com/connection-map.html
+
+Another graph I would like to create is a geospatial graph of the US young adults migratory patterns. Because I have data on where these young adults moved to, I would like to see what the top cities were that young adults moved away from, specifically to Los Angeles. ![](images/Surfer_travel.png){fig-alt="This is a connecting map of the whole world which shows a line from one location on the map to another location. This shows a person's who surfs footprint."}. The reader would be able to see what cities are most likely to move to LA. I would also like to put a percentage compared to that city's population to see how much in total moved away from that city to LA.
 
 ### Hand Drawn Data Visualization
 
-1. ![](images/sundial_plot.png){fig-alt="Figure shows sunburst plot of the most populated city per region in the US. The inner circle shows which region it is, with the total amount and the outer circle shows the city and the amount of people living in that city."}
+1.  ![](images/sundial_plot.png){fig-alt="Figure shows sunburst plot of the most populated city per region in the US. The inner circle shows which region it is, with the total amount and the outer circle shows the city and the amount of people living in that city."}
 
-2. ![](images/lollipop_plot.png){fig-alt="Figure shows lollipop plot of the most populated city in the US. The x axis contains the city name and the y axis contain the amount of people living in the city."}
+2.  ![](images/lollipop_plot.png){fig-alt="Figure shows lollipop plot of the most populated city in the US. The x axis contains the city name and the y axis contain the amount of people living in the city."}
 
-3. ![](images/connecting_map_plot.png){fig-alt="Figure shows connecting map plot of the US. It shows the cities with the most amount of people moving from that city to Los Angeles."}
+3.  ![](images/connecting_map_plot.png){fig-alt="Figure shows connecting map plot of the US. It shows the cities with the most amount of people moving from that city to Los Angeles."}
 
 ### Creating one visualization
 
-  Below, I'll be creating the visualization I had hand drawn for number two. This is visulizing the top ten most populated cities.
+Below, I'll be creating the visualization I had hand drawn for number two. This is visulizing the top ten most populated cities.
 
 # Load in libraries
 
-```{r}
+```{r load packages, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(states)
 library(plotly)
 library(sunburstR)
 library(showtext)
+library(cowplot)
+library(scales)
 ```
 
-```{r}
+```{r load fonts, warning=FALSE}
 #import texts from Google
 font_add_google(name = "Merriweather", family = "merri")
 
@@ -68,7 +72,7 @@ showtext_auto()
 
 ## Load in Datasets
 
-```{r, message=FALSE}
+```{r load datasets, message=FALSE, warning=FALSE}
 
 #read in data
 od <- read_csv("data/od.csv") #whole entire dataset combined into one
@@ -88,21 +92,29 @@ od_pooled <- read_csv("data/od_pooled.csv") #dataset technically not 'separated'
 
 Here I will reshape the datasets to what I would like to output on the graph. I'll go ahead and transform all four datasets for practice and to give me more flexibility for what I would like to create for my exploratory graphs.
 
-```{r}
+```{r load in states dataset}
 #create a new dataframe for state info
 state_info <- tibble(state.name, state.region, state.abb) %>% 
-  rename(d_state_name = state.name)
+  rename(o_state_name = state.name)
 ```
 
-```{r}
+```{r wrangle migration dataset}
 # Most popular cities not separated by a certain factor
 top_ten_pooled <- od_pooled %>% #using od_pooled
-  select(d_cz_name, d_state_name, n_tot_d, pool) %>%#select columns we are interested in, helps get rid of repeats
+  select(o_cz_name, o_state_name, d_cz_name, d_state_name, n, pool) %>%#select columns we are interested in, helps get rid of repeats
+  filter(d_cz_name == "Los Angeles") %>% 
   distinct() %>% #gets rid of repeats in the dataset
-  slice_max(n_tot_d, n = 10) %>%  #find the top 10 most popular cities if applicable
-  left_join(state_info, by = "d_state_name") #left join with state_info dataset to get regions of each state
+  slice_max(n, n = 10) %>%  #find the top 10 most popular cities if applicable
+  left_join(state_info, by = "o_state_name") %>%  #left join with state_info dataset to get regions of each state
+  mutate(n_formatted = number(n, big.mark = ",")) %>% 
+  #add coordinates to dataset to be able to map correctly
+  mutate(long = c(-118, -117, -122, -121, -88, -121, -112, -115, -122, -74),
+         lat = c(34, 33, 37, 38, 42, 37, 33, 36.3, 47, 40.5),
+         la_long = c(-118.001, -118, -118, -118, -118, -118, -118, -118, -118, -118),
+         la_lat = c(34, 34, 34, 34, 34, 34, 34, 34, 34, 34)
+    )
 
-#replace na with Northeast
+#replace na with Northeast for DC
 top_ten_pooled$state.region <- top_ten_pooled$state.region %>% 
   replace_na('Northeast')
 
@@ -110,205 +122,207 @@ top_ten_pooled$state.region <- top_ten_pooled$state.region %>%
 top_ten_pooled$state.abb <- top_ten_pooled$state.abb %>% 
   replace_na('DC')
 
+#combine two columns together to get one column
 top_ten_pooled <- top_ten_pooled %>% 
-  unite("city_state", d_cz_name, state.abb, sep = "-", remove = FALSE)
+  unite("city_state", o_cz_name, state.abb, sep = "-", remove = FALSE) %>% 
+  filter(city_state != "San Jose-CA")
+
+
+  
 
 
 #view wrangled dataset: uncomment to view dataset
 #View(top_ten_pooled)
 ```
 
-```{r}
-# # Most popular cities separated by Race
-# top_ten_race <- od_race %>% #using od_race
-#   select(d_cz_name, d_state_name, n_tot_d, pool) %>% #select columns we are interested in, helps get rid of repeats
-#   group_by(pool) %>% # grouping by pool (in this case it is race)
-#   distinct() %>%  #gets rid of repeats in the dataset
-#   slice_max(n_tot_d, n = 10) #find the top 10 most popular cities if applicable for each race
-# 
 
-#view wrangled dataset: uncomment to view dataset
-#View(top_ten_race)
-
-```
-
-```{r}
-# Most popular cities separated by income
-# top_ten_inc <- od_inc %>% #using od_inc
-#   select(d_cz_name, d_state_name, n_tot_d, pool) %>% #select columns we are interested in, helps get rid of repeats
-#   group_by(pool) %>% # grouping by pool (in this case it is income percentiles)
-#   distinct() %>%  #gets rid of repeats in the dataset
-#   slice_max(n_tot_d, n = 10) #find the top 10 most popular cities if applicable for each income percentile
-# 
-
-#view wrangled dataset: uncomment to view dataset
-#View(top_ten_inc)
-```
-
-```{r}
-# # Most popular cities separated by both race and income
-# top_ten_overall <- od %>% #using od
-#   select(d_cz_name, d_state_name, n_tot_d, pool) %>% #select columns we are interested in, helps get rid of repeats
-#   group_by(pool) %>% # grouping by pool (in this case it is both race and income)
-#   distinct() %>%  #gets rid of repeats in the dataset
-#   slice_max(n_tot_d, n = 10) #find the top 10 most popular cities if applicable for race and income percentile
-# 
-# 
-# #view wrangled dataset: uncomment to view dataset
-#View(top_ten_overall)
-```
-
-```{r, warning=FALSE}
+```{r vis 1: lollipop graph, warning=FALSE}
 #Graph three: Top 10 Cities
 top_ten <- top_ten_pooled %>% 
-  mutate(d_cz_name = forcats::fct_reorder(city_state, desc(n_tot_d))) %>% 
+  mutate(d_cz_name = forcats::fct_reorder(city_state, desc(n))) %>% 
+  filter(city_state != "Los Angeles-CA" & city_state != "San Jose-CA") %>% 
   ggplot(aes(x = city_state, 
-             y = n_tot_d)) +
-  geom_segment(aes(x=d_cz_name, xend=d_cz_name, y=0, yend=n_tot_d), 
-               size = ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), 3, 1.5), 
-               alpha = 1, 
-               color = ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), "#43896B","#6D5F67")) +
-  geom_point(size=ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), 6, 3), 
-             color=ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), "#43896B", "#1A4075"), 
-             fill=alpha("pink", 0.3), alpha=0.7, shape=21, stroke=2) +
-  geom_text(aes(label = n_tot_d), vjust = -1.2, family = "roboto condensed") +#vjust = 0.5, hjust = -0.25)+
+             y = n)) +
+  geom_segment(aes(x=d_cz_name, xend=d_cz_name, y=0, yend=n), 
+               size = 5, 
+               alpha = 1,
+               color = c("#BBC2DD", "#A0A9CF", "#8590C1", "#6A77B4", "#5261A3", "#445188", "#1A4075", "#293051")) +
+  geom_point(size= 10, 
+             color= "#1A4075", 
+             fill=alpha("#D6DAEA", 0.3), alpha=0.7, shape=21, stroke=2) +
+  geom_text(aes(label = n_formatted), vjust = -1.8, family = "roboto condensed") +#vjust = 0.5, hjust = -0.25)+
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  labs(title = "Top Ten Most Populated Cities",
+  labs(title = "Cities with Largest Migration to Los Angeles",
        y = "Total number of people", #could be changed to 'population
-       subtitle = "Population size per city, showing an approximate amount of people that are counted as residents",
+       subtitle = "Population migration size per city, showing an approximate amount of people that have moved to Los Angeles",
        caption = "Data Source: migrationpatterns.org") +
      theme(axis.text.x = element_text(family = "roboto condensed", color = "grey30", size = 12, angle = 45, vjust = 1, hjust= 1), #change x axis font
-        axis.text.y = element_text(family = "roboto condensed", color = "grey30", size = 12), #change y axis font
+        axis.text.y = element_blank(), #element_text(family = "roboto condensed", color = "grey30", size = 12), #change y axis font
         plot.title = element_text(family = "merri", face = "bold", size = 35, color = "#201B22", hjust = 0), #change title font
-        plot.subtitle = element_text(family = "roboto condensed", color = "grey30", size = 12),
+        plot.subtitle = element_text(family = "roboto condensed", face = "italic", color = "grey30", size = 12),
         plot.caption = element_text(family = "roboto condensed", color = "grey30", size = 12),
         #axis.title.x = element_text(family = "roboto condensed", color = "grey30", size = 16),
-        axis.title.y = element_text(family = "roboto condensed", color = "grey30", size = 16),
+        axis.title.y = element_blank(), #element_text(family = "roboto condensed", color = "grey30", size = 16),
         panel.background = element_rect(fill = "white"), #change background of graph to white
-        panel.grid.major.y = element_line(color = "grey60", linetype = "13"),#change grid to only show x axis and have it a dotted line type
-        axis.title.x = element_blank()) 
+        panel.grid.major.y = element_blank(), #element_line(color = "grey60", linetype = "13"),#change grid to only show x axis and have it a dotted line type
+        axis.title.x = element_blank(),
+        axis.ticks = element_blank()
+        ) 
 
-top_ten_annt <- top_ten + annotate("text", x=grep("Los Angeles-CA", top_ten_pooled$city_state), y=top_ten_pooled$n_tot_d[which(top_ten_pooled$city_state=="Los Angeles-CA")]*1.2, 
-           label="Los Angeles has more residents than Boston, Atlanta, and Newark combined", 
-           color="#43896B", size=5 , angle=0, fontface="bold", hjust=0.1, vjust = 3.5)
+top_ten
 
-print(top_ten_annt)
+# top_ten_annt <- top_ten + annotate("text", x=grep("Los Angeles-CA", top_ten_pooled$city_state), y=top_ten_pooled$n_tot_d[which(top_ten_pooled$city_state=="Los Angeles-CA")]*1.2, 
+#            label="Los Angeles has more residents than Boston, Atlanta, and Newark combined", 
+#            color="#43896B", size=5 , angle=0, fontface="bold", hjust=0.1, vjust = 3.5)
+# 
+# print(top_ten_annt)
 
-#ggsave("top_ten_cities.png", plot = top_ten_annt, path = ("images"), width = 15.5, height = 8)
+ggsave("top_ten_cities.png", plot = top_ten, path = ("images"), width = 15.5, height = 8)
 ```
 
-
-```{r, warning=FALSE}
-#STILL A WORK IN PROGRESS BUT THIS IS BASICALLY THE FINISHED PRODUCT
+```{r vis 2: bar graph, warning=FALSE, message=FALSE}
 
 library(patchwork)
 
+#subset for only LA observation
 la_pooled <- top_ten_pooled[1,]
 
-bot_three_pooled <- top_ten_pooled[8:10,] %>% 
-  mutate(combined = "Cities Combined")
+#subset for all other observations
+migrate_pooled <- top_ten_pooled[2:9,] %>%
+  mutate(combined = "Cities Combined",
+         total = sum(top_ten_pooled$n))
 
-la_bar <- ggplot(data = la_pooled, aes(x = city_state, y = n_tot_d)) +
+#create bar graph for LA population
+la_bar <- ggplot(data = la_pooled, aes(x = city_state, y = n)) +
   geom_col(width = 0.5, fill = "#43896B") +
   scale_y_continuous(limits = c(0, 1800000)) +
-  labs(title = "Population of LA compared to Atlanta, Boston, and Newark combined",
-       y = "Amount of people") +
+  labs(title = "Population of LA compared to All other Cities Combined",
+       subtitle = "This chart shows the comparison of those that chose to stay in LA verses those that chose to move to LA") +
+  geom_text(aes(label = n_formatted), vjust = -1.8) +
   theme(
     panel.background = element_blank(),
     axis.title.x = element_blank(),
-    plot.title.position = "plot"
+    axis.title.y = element_blank(),
+    plot.title.position = "plot",
+    axis.text.y = element_blank(),
+    axis.text.x = element_text(size = 18),
+   # axis.title.y = element_text(size = 25),
+    axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+   plot.title = element_text(family = "merri", face = "bold", size = 25, color = "#201B22", hjust = 0),
+    plot.subtitle = element_text(family = "merri", face = "italic", size = 15, color = "#201B22", hjust = 0)
   )
 
-bot_three_bar <- ggplot(data = bot_three_pooled, aes(fill = city_state, y = n_tot_d, x = combined)) +
-  geom_col(width = 0.5, position = position_stack(vjust = 1))+
+#create bar graph on combined cities population
+bot_cities_bar_controlled_y <- ggplot(data = migrate_pooled, aes(fill = city_state, y = n, x = combined)) +
+  geom_col(width = 0.5, position = position_stack(vjust = 1), fill = c("#BBC2DD", "#A0A9CF", "#8590C1", "#6A77B4", "#5261A3", "#445188", "#1A4075", "#293051"))+
   scale_y_continuous(limits = c(0, 1800000)) +  
   guides(fill=guide_legend(title="Cities")) +
+  annotate("text", x = 1, y=160000, label = "85,286") +
   theme(
     panel.background = element_blank(),
     axis.title.y = element_blank(),
-    axis.title.x = element_blank()
+    axis.title.x = element_blank(),
+    plot.background = element_rect(fill='transparent', color=NA),
+    axis.text.y = element_blank(),
+    axis.text.x = element_text(size = 18),
+    legend.title = element_text(size = 25),
+    legend.text = element_text(size = 20),
+        axis.ticks.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "top"
   )
 
-# la_bar
-# bot_three_bar
+#view bar graphs
+la_bar
+bot_cities_bar_controlled_y
 
-combined_bar <- (la_bar + bot_three_bar)
+#combine the bar graphs with patchwork
+combined_bar <- (la_bar + bot_cities_bar_controlled_y)
 
+#view combined bargraph
 combined_bar
 
+#save combined bargraph
+ggsave("combined_bar.png", plot = combined_bar, path = ("images"), width = 8, height = 4)
+
+
+# bot_three_bar <- ggplot(data = migrate_pooled, aes(fill = city_state, y = n, x = combined)) +
+#   geom_col(width = 0.5, color = "black", position = position_stack(vjust = 1),  fill = c("#BBC2DD", "#A0A9CF", "#8590C1", "#6A77B4", "#5261A3", "#445188", "#1A4075", "#293051"))+
+#   #scale_y_continuous(limits = c(0, 1800000)) +  
+#   guides(fill=guide_legend(title="Cities")) +
+#   annotate("text", x = 1, y=88000, label = "85286") +
+#   theme(
+#     panel.background = element_blank(),
+#     axis.title.y = element_blank(),
+#     axis.title.x = element_blank(),
+#     plot.background = element_rect(fill='transparent', color=NA),
+#     axis.text.y = element_text(size = 15),
+#     axis.text.x = element_text(size = 15),
+#     legend.title = element_text(size = 25),
+#     legend.text = element_text(size = 20),
+#     legend.position = "top"
+#   )
+# 
+# 
+# bot_three_bar
+# 
+# ggsave("bottom_cities_bar.png", plot = bot_three_bar, path = ("images"), width = 8, height = 4)
 
 ```
 
+```{r vis 3: map, warning=FALSE}
+#create map visualization
+map <- top_ten_pooled %>% 
+  ggplot(aes(long, lat)) +
+  borders("state", col="#61677A", fill="white") +
+  geom_curve(aes(x=long, y=lat, xend=la_long, yend=la_lat, color = o_cz_name), curvature = 0.1, alpha = 0.8, linewidth = 2) +
+  scale_color_manual(values=c("#69a9ff", "#5990d9", "#5284c8", "#4b78b5", "#436ba2", "#3c6090", "#2d4c75","#0f2745", "#293051" )) +
+  geom_point(color=ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), "black", "black")) +
+  coord_quickmap() +
+  labs(title = "Where are Young Adults Moving From in the US to Los Angeles?",
+       subtitle = "A view of the cities with the most migration amounts to Los Angeles")+
+  ggrepel::geom_label_repel(label = top_ten_pooled$o_cz_name, 
+                   fill = "grey",
+                   color = "gray10",
+                   alpha = 0.7, 
+                   size = 5, 
+                   force = 3,
+                   show.legend = FALSE,
+                   point.padding = 5,
+                   #nudge_y = -0.7,
+                   arrow = arrow(length = unit(1, "cm")),
+                   max.overlaps = 20) +
+  theme_void() +
+  theme(
+    legend.text = element_blank(),
+    legend.background = element_blank(),
+    legend.title = element_blank(),
+    legend.key = element_blank(),
+    legend.position = "none",
+    plot.background = element_rect(fill='transparent'),
+    plot.title = element_text(family = "merri", face = "bold", size = 25, color = "#201B22", hjust = 0),
+    plot.subtitle = element_text(family = "merri", face = "italic", size = 15, color = "#201B22", hjust = 0),
+    plot.margin = margin(r = 45, l = 45)
+  )
 
-```{r, warning=FALSE}
-#Still not working
-top_ten_annt + annotation_custom(ggplotGrob(la_bar + bot_three_bar), xmin = 6, xmax = 10, 
-                       ymin = 1000000, ymax = 2000000)
+#view map
+map
 
 ```
-
-
 
 ### Additional Questions
 
 What challenges did you encounter or anticipate encountering as you continue to build / iterate on your visualizations in R?
 
-- One challenge that I encountered is trying to combine the two graphs together that I created for my visualization. Currently, I have just the three bottom cities on the original graph combined together. When I try to combine them together, only one graph shows up. This issue is still not resolved. I'll have to ask my classmate or Sam or Sevan for guidance on how to combine the two graphs together.
+-   One challenge that I encountered is trying to create the map. After many times of Googling, I stumbled across a stack overflow page that used the function geom_segment and geom_point to create the map I was interested in. My current issue now is trying to move the tabs to how I want them positioned on the map. Currently, a couple of the points are overlapping points of interest.
 
-What ggplot extension tools / packages do you need to use to build your visualizations? Are there any that we haven’t covered in class that you’ll be learning how to use for your visualizations?
+What ggplot extension tools / packages do you need to use to build your visualizations? Are there any that we haven't covered in class that you'll be learning how to use for your visualizations?
 
-- I'll be looking into `plotly` to create my sunburst graph. Because this is a topic that we did not cover in class, I'll have to plan my time out well to be able to research how to use `plotly` and see if this is the right tool to use for my visualization. I have currently done some preliminary tries on trying to create a sunburst plot but it did not go as intended, so I'll have to look into the documentation more in detail.
+-  In terms of tools, I believe I will be using the tools that we learned in class. This includes using ggplot to build my visualizations. I looked into `plotly` a bit to see if it will help me build a sunburst plot, however, I decided to shift my focus to else where as it didn't fit my overall story I wanted to tell in my inforgraphic. Fortunently I was able to find enough resources on how to use ggplot to create all of my visualizations. The package `patchwork` also helped me in finalizing my visualizations as well.
 
 What feedback do you need from the instructional team and / or your peers to ensure that your intended message is clear?
 
-- Feedback I would like is pointing out certain stuff on the visualization that is not clear or not necessary. Since I have been working on this data for so long, I feel like I now understand most parts of my dataset. However, I know what first time viewers for this work may not know some of the syntax that I used. I would appreciate feedback on that.
+-   Feedback I would like is pointing out certain stuff on the visualization that is not clear or not necessary. Since I have been working on this data for so long, I feel like I now understand most parts of my dataset. However, I know what first time viewers for this work may not know some of the syntax that I used. I would appreciate feedback on that. I would also appreciate feedback on color visuals as well. At the moment, I don't believe my color scheme is the best it could be and am trying to figure out other types of color schemes as well to help with this.
 
 
-
-```{r}
-
-# exploration code for other visualization
-
-# fig <- plot_ly(
-#   type = "sunburst",
-#   labels = top_ten_pooled$state.region,
-#   parents = top_ten_pooled$state.region,
-#   values = top_ten_pooled$n_tot_d
-# )
-#  
-# fig
-# 
-# 
-# 
-# 
-# 
-# fig <- plot_ly()
-# 
-# 
-# fig <- fig %>% add_trace(
-# 
-#   type='sunburst',
-# 
-#   ids=df$ids,
-# 
-#   labels=df$labels,
-# 
-#   parents=df$parents,
-# 
-#   domain=list(column=1),
-# 
-#   maxdepth=2,
-# 
-#   insidetextorientation='radial'
-# 
-# )
-# 
-# fig
-# ```
-# 
-# ## Visualization 2 with sunburstR
-# 
-# ```{r}
-# sunburst(data = top_ten_pooled, legend = FALSE,
-#          colors = c("D99527", "6F7239", "CE4B3C", "C8AC70", "018A9D"))
-```
