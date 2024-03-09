@@ -19,6 +19,7 @@ library(showtext)
 library(cowplot)
 library(maps)
 library(geosphere)
+library(scales)
 ```
 
 ```{r}
@@ -90,56 +91,165 @@ top_ten_pooled <- top_ten_pooled %>%
 
 
 ```{r vis 1 map}
+#create first color palette
 col_pal_9 <- c("black", "#0C3A0C", "#135913", "#187218", "#1D8C1D", "#20AC20", "#2ADB2A", "#48FE48", "#8AED8A")
 
+#create second color palette
 col_pal_8 <- c("#0C3A0C", "#135913", "#187218", "#1D8C1D", "#20AC20", "#2ADB2A", "#8AED8A", "#9BD69B")
 
 
-map <- top_ten_pooled %>% 
-  ggplot(aes(long, lat)) +
-  borders("state", col="grey30", fill="#FEE3FE") +
-  geom_curve(aes(x=long, y=lat, xend=la_long, yend=la_lat, color = o_cz_name), 
+#create map
+map <- top_ten_pooled %>% #piping from top_ten_pooled
+  ggplot(aes(long, lat)) + #have aes as long (x) and lat (y)
+  borders("state", col="grey30", fill="gainsboro") + #create map
+  geom_curve(aes(x=long, y=lat, xend=la_long, yend=la_lat, color = o_cz_name), #create ling segment
              curvature = 0.1, 
              alpha = 0.8, 
              linewidth = 2, 
              color = col_pal_9) +
   # scale_color_manual(values=c("#69a9ff", "#5990d9", "#5284c8", "#4b78b5", "#436ba2", "#3c6090", "#2d4c75","#0f2745", "#293051" )) +
-  geom_point(color=ifelse(top_ten_pooled_filter$city_state %in% c("Los Angeles-CA"), "#1A4075", "black"), size = 3) +
-  coord_quickmap() +
-  labs(title = "Where are Young Adults Moving From in the US to Los Angeles?",
-       subtitle = "A view of the cities with the most migration amounts to Los Angeles")+
-  ggrepel::geom_label_repel(label = ifelse(top_ten_pooled_filter$o_cz_name %in% 
-                                             c("San Diego-CA",
-                                               "Sacramento-CA",
-                                               "Chicago-IL",
-                                               "Phoenix-AZ",
-                                               "Las Vegas-NV",
-                                               "Seattle-WA",
-                                               "New York-NY")),
-                            fill = "grey",
-                            color = "gray10",
-                            alpha = 0.7, 
-                            size = 5, 
-                            force = 3,
-                            show.legend = FALSE,
-                            point.padding = 5,
-                            #nudge_y = -0.7,
-                            arrow = arrow(length = unit(1, "cm")),
-                            max.overlaps = 20) +
-  ggrepel::geom_label(label = ifelse(top_ten_pooled_filter$o_cz_name %in% 
-                                             c("Los Angeles-CA",
-                                               "San Francisco-CA")),
-                            fill = "grey",
-                            color = "gray10",
-                            alpha = 0.7, 
-                            size = 5, 
-                            force = 3,
-                            show.legend = FALSE,
-                            point.padding = 5,
-                            #nudge_y = -0.7,
-                            arrow = arrow(length = unit(1, "cm")),
-                            max.overlaps = 20)
-  theme_void() +
+  geom_point(color=ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), "#2d4c75", "black"), 
+             size = 3, 
+             color = "black") + #create points and specify what color the LA point is verses for the others
+  coord_quickmap() + #graph map
+#   labs(title = "Map of which City's Population are Moving to Los Angeles",
+# subtitle = "A view of which cities have the most migration amounts per person to Los Angeles") +
+  #here I will be creating a geom_label per city to be able to control the position of each:
+  #San Digeo------
+geom_label(aes(label = ifelse(city_state %in% 
+                                c("San Diego-CA"), top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 3,
+           nudge_y = -1.1,
+           nudge_x = 1,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  #Sacramento--------
+geom_label(aes(label = ifelse(city_state %in% 
+                                c(
+                                  "Sacramento-CA"), top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 3,
+           nudge_y = 1,
+           nudge_x = 1.5,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  #Chicago------------
+geom_label(aes(label = ifelse(city_state %in% 
+                                c(
+                                  "Chicago-IL"), top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 3,
+           nudge_y = 1,
+           nudge_x = 1,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  #Phoenix------------------
+geom_label(aes(label = ifelse(city_state %in% 
+                                c(
+                                  "Phoenix-AZ"), top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 3,
+           nudge_y = 1,
+           nudge_x = 1.3,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  #Las Vegas------------------
+geom_label(aes(label = ifelse(city_state %in% 
+                                c(
+                                  "Las Vegas-NV"), top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 3,
+           nudge_y = 1,
+           nudge_x = 1,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  #Seattle-------------------
+geom_label(aes(label = ifelse(city_state %in% 
+                                c(
+                                  "Seattle-WA"), top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 3,
+           nudge_y = 1,
+           nudge_x = 0,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  #New York------------------
+geom_label(aes(label = ifelse(city_state %in% 
+                                c(
+                                  "New York-NY"), top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 3,
+           nudge_y = 1,
+           nudge_x = 1,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  #Los Angeles----------------
+geom_label(aes(label = ifelse(top_ten_pooled$city_state %in% 
+                                c("Los Angeles-CA"),top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 5,
+           nudge_y = -0.8,
+           nudge_x = -3,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  #San Francisco--------------------
+geom_label(aes(label = ifelse(top_ten_pooled$city_state %in% 
+                                c(
+                                  "San Francisco-CA"),top_ten_pooled$o_cz_name, NA)),
+           fill = "white",
+           color = "black",
+           alpha = 1, 
+           size = 5, 
+           force = 3,
+           show.legend = FALSE,
+           point.padding = 5,
+           nudge_y = -1,
+           nudge_x = -1.5,
+           arrow = arrow(length = unit(1, "cm")),
+           max.overlaps = 20) +
+  theme_void() + #have theme as void
+  #create theme to change layout of plot
   theme(
     legend.text = element_blank(),
     legend.background = element_blank(),
@@ -147,23 +257,19 @@ map <- top_ten_pooled %>%
     legend.key = element_blank(),
     legend.position = "none",
     plot.background = element_rect(fill='transparent'),
-    plot.title = element_text(family = "merri", face = "bold", size = 25, color = "#201B22", hjust = 0),
+    plot.title = element_text(family = "merri", size = 25, color = "#201B22", hjust = 0),
     plot.subtitle = element_text(family = "merri", face = "italic", size = 15, color = "#201B22", hjust = 0),
     plot.margin = margin(r = 45, l = 45),
-    panel.border = element_blank()
+    panel.border = element_blank(),
+    panel.background = element_blank()
   )
 
+#print map
 map
 
+#save image
 ggsave("map.png", plot = map, path = ("images"), width = 12, height = 8)
 
-
-#NOTES
-#Chicago - red
-#New York - Gray
-#San Francisco - 
-#Seattle - Gray/white
-#phoenix - orange
 
 
 ```
@@ -171,7 +277,7 @@ ggsave("map.png", plot = map, path = ("images"), width = 12, height = 8)
 
 ```{r visualization 2 lollipop graph}
 #Graph three: Top 10 Cities
-top_ten <- top_ten_pooled %>% 
+top_ten_lolli <- top_ten_pooled %>% 
   mutate(d_cz_name = forcats::fct_reorder(city_state, desc(n))) %>% 
   filter(city_state != "Los Angeles-CA" & city_state != "San Jose-CA") %>% 
   ggplot(aes(x = city_state, 
@@ -184,26 +290,30 @@ top_ten <- top_ten_pooled %>%
   geom_point(size= 10, 
              color= "#176417", 
              fill=alpha("#8AD78A", 0.3), alpha=0.7, shape=21, stroke=2) +
-  geom_text(aes(label = n_formatted), vjust = -1.8, family = "roboto condensed") +#vjust = 0.5, hjust = -0.25)+
+  geom_text(aes(label = n_formatted), vjust = -1.8, family = "merri", size = 6) +#vjust = 0.5, hjust = -0.25)+
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  labs(title = "Cities with Largest Migration to Los Angeles",
-       y = "Total number of people", #could be changed to 'population
-       subtitle = "Population migration size per city, showing an approximate amount of people that have moved to Los Angeles",
-       caption = "Data Source: migrationpatterns.org") +
-  theme(axis.text.x = element_text(family = "roboto condensed", color = "grey30", size = 12, angle = 45, vjust = 1, hjust= 1), #change x axis font
+  # labs(title = "Cities with Largest Migration to Los Angeles",
+  #      y = "Total number of people", #could be changed to 'population
+  #      subtitle = "Population migration size per city, showing an approximate amount of people that have moved to Los Angeles",
+  #      caption = "Data Source: migrationpatterns.org") +
+  theme(axis.text.x = element_text(family = "merri", color = "grey30", size = 15, angle = 45, vjust = 1, hjust= 1), #change x axis font
         axis.text.y = element_blank(), #element_text(family = "roboto condensed", color = "grey30", size = 12), #change y axis font
         plot.title = element_text(family = "merri", face = "bold", size = 35, color = "#201B22", hjust = 0), #change title font
-        plot.subtitle = element_text(family = "roboto condensed", face = "italic", color = "grey30", size = 12),
-        plot.caption = element_text(family = "roboto condensed", color = "grey30", size = 12),
+        plot.subtitle = element_text(family = "merri", face = "italic", color = "grey30", size = 12),
+        plot.caption = element_text(family = "merri", color = "grey30", size = 12),
         #axis.title.x = element_text(family = "roboto condensed", color = "grey30", size = 16),
         axis.title.y = element_blank(), #element_text(family = "roboto condensed", color = "grey30", size = 16),
-        panel.background = element_rect(fill = "white"), #change background of graph to white
-        panel.grid.major.y = element_blank(), #element_line(color = "grey60", linetype = "13"),#change grid to only show x axis and have it a dotted line type
+        panel.background = element_rect(fill='transparent', color = NA), #change background of graph to white
+        panel.grid = element_blank(), #element_line(color = "grey60", linetype = "13"),#change grid to only show x axis and have it a dotted line type
         axis.title.x = element_blank(),
-        axis.ticks = element_blank()
+        axis.ticks = element_blank(),
+        plot.margin = margin(l = 20),
+        plot.background = element_rect(fill = "transparent", color = NA)
   ) 
 
-top_ten
+top_ten_lolli
+
+ggsave("top_ten_lolli.png", plot = top_ten_lolli, path = ("images"), width = 10, height = 7)
 
 ```
 
@@ -225,9 +335,9 @@ migrate_pooled <- top_ten_pooled[2:9,] %>%
 la_bar <- ggplot(data = la_pooled, aes(x = city_state, y = n)) +
   geom_col(width = 0.5, fill = "#1A4075") +
   scale_y_continuous(limits = c(0, 1800000)) +
-  labs(title = "Population of LA Compared to All other
-Cities Combined",
-subtitle = "This chart shows the comparison of those that chose to stay in LA verses those that chose to move to LA") +
+#   labs(title = "Population of LA Compared to All other
+# Cities Combined",
+# subtitle = "This chart shows the comparison of those that chose to stay in LA verses those that chose to move to LA") +
   geom_text(aes(label = n_formatted), vjust = -0.7) +
   theme(
     panel.background = element_blank(),
@@ -243,7 +353,8 @@ subtitle = "This chart shows the comparison of those that chose to stay in LA ve
     plot.subtitle = element_text(family = "merri", face = "italic", size = 10, color = "#201B22", hjust = 0),
     plot.background = element_rect(fill='transparent', color = NA),
     panel.border = element_blank(),
-    panel.grid = element_blank()
+    panel.grid = element_blank(),
+    plot.margin = margin(r = 1)
   )
 
 #create bar graph on combined cities population
@@ -274,7 +385,9 @@ la_bar
 bot_cities_bar_controlled_y
 
 #combine the bar graphs with patchwork
-combined_bar <- (la_bar + bot_cities_bar_controlled_y) + 
+design <- "AABB"
+
+combined_bar <- (la_bar + bot_cities_bar_controlled_y) +
   plot_annotation(theme = theme(plot.background = element_rect(fill='transparent', color=NA)))
 
 #view combined bargraph
