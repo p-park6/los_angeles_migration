@@ -13,13 +13,10 @@ editor_options:
 ```{r, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(states)
-library(plotly)
-library(sunburstR)
-library(showtext)
-library(cowplot)
 library(maps)
-library(geosphere)
+library(patchwork)
 library(scales)
+library(showtext)
 ```
 
 ```{r}
@@ -88,7 +85,7 @@ top_ten_pooled <- top_ten_pooled %>%
 #View(top_ten_pooled)
 ```
 
-
+## Visual 1: Map
 
 ```{r vis 1 map}
 #create first color palette
@@ -274,54 +271,48 @@ ggsave("map.png", plot = map, path = ("images"), width = 12, height = 8)
 
 ```
 
+## Visual 2: Lollipop Graph
 
 ```{r visualization 2 lollipop graph}
-#Graph three: Top 10 Cities
-top_ten_lolli <- top_ten_pooled %>% 
-  mutate(d_cz_name = forcats::fct_reorder(city_state, desc(n))) %>% 
-  filter(city_state != "Los Angeles-CA" & city_state != "San Jose-CA") %>% 
-  ggplot(aes(x = city_state, 
+#Graph two: amount of people moving to Los Angeles
+top_ten_lolli <- top_ten_pooled %>% #piping from top_ten_pooled
+  mutate(d_cz_name = forcats::fct_reorder(city_state, desc(n))) %>% #rearrange order
+  filter(city_state != "Los Angeles-CA") %>% #filter by taking out Los Angeles
+  ggplot(aes(x = city_state, #create the aes
              y = n)) +
-  geom_segment(aes(x=d_cz_name, xend=d_cz_name, y=0, yend=n), 
+  geom_segment(aes(x=d_cz_name, xend=d_cz_name, y=0, yend=n), #specify the length of each stick
                size = 5, 
                alpha = 1,
                color = col_pal_8) +
-  #c("#BBC2DD", "#A0A9CF", "#8590C1", "#6A77B4", "#5261A3", "#445188", "#1A4075", "#293051")) +
-  geom_point(size= 10, 
+  geom_point(size= 10, #specify where the points are located on the graph
              color= "#176417", 
              fill=alpha("#8AD78A", 0.3), alpha=0.7, shape=21, stroke=2) +
-  geom_text(aes(label = n_formatted), vjust = -1.8, family = "merri", size = 6) +#vjust = 0.5, hjust = -0.25)+
+  geom_text(aes(label = n_formatted), vjust = -1.8, family = "merri", size = 6) + #add text showing the amount per lollipop graph
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  # labs(title = "Cities with Largest Migration to Los Angeles",
-  #      y = "Total number of people", #could be changed to 'population
-  #      subtitle = "Population migration size per city, showing an approximate amount of people that have moved to Los Angeles",
-  #      caption = "Data Source: migrationpatterns.org") +
+  # Theme edits:
   theme(axis.text.x = element_text(family = "merri", color = "grey30", size = 15, angle = 45, vjust = 1, hjust= 1), #change x axis font
-        axis.text.y = element_blank(), #element_text(family = "roboto condensed", color = "grey30", size = 12), #change y axis font
-        plot.title = element_text(family = "merri", face = "bold", size = 35, color = "#201B22", hjust = 0), #change title font
-        plot.subtitle = element_text(family = "merri", face = "italic", color = "grey30", size = 12),
-        plot.caption = element_text(family = "merri", color = "grey30", size = 12),
-        #axis.title.x = element_text(family = "roboto condensed", color = "grey30", size = 16),
-        axis.title.y = element_blank(), #element_text(family = "roboto condensed", color = "grey30", size = 16),
-        panel.background = element_rect(fill='transparent', color = NA), #change background of graph to white
-        panel.grid = element_blank(), #element_line(color = "grey60", linetype = "13"),#change grid to only show x axis and have it a dotted line type
-        axis.title.x = element_blank(),
-        axis.ticks = element_blank(),
-        plot.margin = margin(l = 20),
-        plot.background = element_rect(fill = "transparent", color = NA)
+        axis.text.y = element_blank(), #take out y axis text
+        axis.title.y = element_blank(), #take out y axis title
+        panel.background = element_rect(fill='transparent', color = NA), #change background of graph to transparent
+        panel.grid = element_blank(), #take out grid
+        axis.title.x = element_blank(), #take out x axis title
+        axis.ticks = element_blank(), #take out tick marks
+        plot.margin = margin(l = 20), #extend the left margin out
+        plot.background = element_rect(fill = "transparent", color = NA) #make background transparent
   ) 
 
+#print graphic
 top_ten_lolli
 
-ggsave("top_ten_lolli.png", plot = top_ten_lolli, path = ("images"), width = 10, height = 7)
+#save graphic
+#ggsave("top_ten_lolli.png", plot = top_ten_lolli, path = ("images"), width = 10, height = 7)
 
 ```
 
+## Visual 3: bar graph
 
 ```{r vis 3: bar graph, warning=FALSE, message=FALSE}
-
-library(patchwork)
-
+#graph three: bar graph
 #subset for only LA observation
 la_pooled <- top_ten_pooled[1,]
 
@@ -332,38 +323,33 @@ migrate_pooled <- top_ten_pooled[2:9,] %>%
          total = sum(top_ten_pooled$n))
 
 #create bar graph for LA population
-la_bar <- ggplot(data = la_pooled, aes(x = city_state, y = n)) +
-  geom_col(width = 0.5, fill = "#1A4075") +
-  scale_y_continuous(limits = c(0, 1800000)) +
-#   labs(title = "Population of LA Compared to All other
-# Cities Combined",
-# subtitle = "This chart shows the comparison of those that chose to stay in LA verses those that chose to move to LA") +
-  geom_text(aes(label = n_formatted), vjust = -0.7) +
+la_bar <- ggplot(data = la_pooled, aes(x = city_state, y = n)) + #specify what datasets and aes I want to look at
+  geom_col(width = 0.5, fill = "#1A4075") + #specify width of bar
+  scale_y_continuous(limits = c(0, 1800000)) + #set y axis to be consistent with other graph
+  geom_text(aes(label = n_formatted), vjust = -0.7) + #create a text label to show total population of LA
+  #edit theme to preference
   theme(
-    panel.background = element_blank(),
-    axis.title.x = element_blank(),
-    axis.title.y = element_blank(),
-    plot.title.position = "plot",
-    axis.text.y = element_blank(),
-    axis.text.x = element_text(size = 13),
-    # axis.title.y = element_text(size = 25),
-    axis.ticks.y = element_blank(),
-    axis.ticks.x = element_blank(),
-    plot.title = element_text(family = "merri", face = "bold", size = 25, color = "#201B22", hjust = 0),
-    plot.subtitle = element_text(family = "merri", face = "italic", size = 10, color = "#201B22", hjust = 0),
-    plot.background = element_rect(fill='transparent', color = NA),
-    panel.border = element_blank(),
-    panel.grid = element_blank(),
-    plot.margin = margin(r = 1)
+    panel.background = element_blank(), #take out panel
+    axis.title.x = element_blank(), #take out x axis title
+    axis.title.y = element_blank(), #take out y axis title
+    plot.title.position = "plot", #reposition plot title
+    axis.text.y = element_blank(), #take out y axis text
+    axis.text.x = element_text(size = 13), #change x axis font size
+    axis.ticks.y = element_blank(), #take out y axis ticks
+    axis.ticks.x = element_blank(), #take out x axis ticks
+    plot.background = element_rect(fill='transparent', color = NA), #make transparent
+    panel.border = element_blank(), #take out panel
+    panel.grid = element_blank(), #take out grid
+    plot.margin = margin(r = 1) #shift right side margin
   )
 
 #create bar graph on combined cities population
 bot_cities_bar_controlled_y <- ggplot() +
-  geom_col(data = migrate_pooled, aes(fill = city_state, y = n, x = combined), width = 0.5, position = position_stack(vjust = 1), fill = col_pal_8) +
-  # geom_col(data = migrate_pooled, aes(fill = city_state, y = n_tot_o, x = total_combined), width = 0.5, position = position_stack(vjust = 1)) +
-  scale_y_continuous(limits = c(0, 1800000)) +  
-  guides(fill=guide_legend(title="Cities")) +
-  annotate("text", x = 1, y=160000, label = "85,286") +
+  geom_col(data = migrate_pooled, aes(fill = city_state, y = n, x = combined), width = 0.5, position = position_stack(vjust = 1), fill = col_pal_8) + #create columns to make them stack on top of each other
+  scale_y_continuous(limits = c(0, 1800000)) +  #set y axis to be consistent with other graph
+  guides(fill=guide_legend(title="Cities")) + #set titles 
+  annotate("text", x = 1, y=160000, label = "85,286") + #add label to show total combined population
+  #edit theme as before
   theme(
     panel.background = element_blank(),
     axis.title.y = element_blank(),
@@ -381,12 +367,10 @@ bot_cities_bar_controlled_y <- ggplot() +
   )
 
 #view bar graphs
-la_bar
-bot_cities_bar_controlled_y
+# la_bar
+# bot_cities_bar_controlled_y
 
 #combine the bar graphs with patchwork
-design <- "AABB"
-
 combined_bar <- (la_bar + bot_cities_bar_controlled_y) +
   plot_annotation(theme = theme(plot.background = element_rect(fill='transparent', color=NA)))
 
@@ -394,18 +378,14 @@ combined_bar <- (la_bar + bot_cities_bar_controlled_y) +
 combined_bar
 
 #save combined bargraph
-ggsave("combined_bar.png", plot = combined_bar, path = ("images"), width = 8, height = 4)
+#ggsave("combined_bar.png", plot = combined_bar, path = ("images"), width = 8, height = 4)
 ```
 
+## Export finished graph
+
+```{r}
 
 
-
-How many per year
-
-in lollipop, how many people are staying in that city
-
-
-
-
+```
 
 
