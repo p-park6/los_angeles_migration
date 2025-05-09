@@ -28,7 +28,7 @@ showtext_auto()
 
 ```{r, message=FALSE}
 
-#read in data
+#read in data (create a new folder called 'data' and insert all data in this folder)
 od <- read_csv("data/od.csv") #whole entire dataset combined into one
 od_race <- read_csv("data/od_race.csv") #dataset separated by race
 od_inc <- read_csv("data/od_inc.csv") #dataset separated by income percentiles
@@ -54,49 +54,49 @@ state_info <- tibble(state.name, state.region, state.abb) %>%
 
 ```{r}
 # Most popular cities not separated by a certain factor
-top_ten_pooled <- od_pooled %>% #using od_pooled
+top_pooled <- od_pooled %>% #using od_pooled
   select(o_cz_name, o_state_name, d_cz_name, d_state_name, n, n_tot_o, pool) %>%#select columns we are interested in, helps get rid of repeats
   filter(d_cz_name == "Los Angeles") %>% 
   distinct() %>% #gets rid of repeats in the dataset
   slice_max(n, n = 10) %>%  #find the top 10 most popular cities if applicable
   left_join(state_info, by = "o_state_name") %>%  #left join with state_info dataset to get regions of each state
-  mutate(n_formatted = number(n, big.mark = ",")) %>% 
+  mutate(n_formatted = number(n, big.mark = ",")) %>% #adds commas to the numbers so they are formatted correctly (ex. 2,000 instead of 2000)
   #add coordinates to dataset to be able to map correctly
+  #the first long lat are for markers for the cities
   mutate(long = c(-118, -117, -122, -121, -88, -121, -112, -115, -122, -74),
          lat = c(34, 33, 37, 38, 42, 37, 33, 36.3, 47, 40.5),
-         la_long = c(-118.001, -118, -118, -118, -118, -118, -118, -118, -118, -118),
+          #the la long lat are for where LA is so when map is made, the connecting line can be made correctly, connecting the two cities together
+         #the first -118.001 has to be a different number for the map to correctly graph and not have an error on it
+         la_long = c(-118.001, -118, -118, -118, -118, -118, -118, -118, -118, -118), 
          la_lat = c(34, 34, 34, 34, 34, 34, 34, 34, 34, 34)
   )
 
 #replace na with Northeast
-top_ten_pooled$state.region <- top_ten_pooled$state.region %>% 
+top_pooled$state.region <- top_pooled$state.region %>% 
   replace_na('Northeast')
 
 #replace na with dc
-top_ten_pooled$state.abb <- top_ten_pooled$state.abb %>% 
+top_pooled$state.abb <- top_pooled$state.abb %>% 
   replace_na('DC')
 
-top_ten_pooled <- top_ten_pooled %>% 
+top_pooled <- top_pooled %>% 
   unite("city_state", o_cz_name, state.abb, sep = "-", remove = FALSE)%>% 
   filter(city_state != "San Jose-CA")
 
 
 #view wrangled dataset: uncomment to view dataset
-#View(top_ten_pooled)
+#View(top_pooled)
 ```
 
 ## Visual 1: Map
 
 ```{r vis 1 map}
-#create first color palette
+#create first color palette (for map)
 col_pal_9 <- c("black", "#0C3A0C", "#135913", "#187218", "#1D8C1D", "#20AC20", "#2ADB2A", "#48FE48", "#8AED8A")
-
-#create second color palette
-col_pal_8 <- c("#0C3A0C", "#135913", "#187218", "#1D8C1D", "#20AC20", "#2ADB2A", "#8AED8A", "#9BD69B")
 
 
 #create map
-map <- top_ten_pooled %>% #piping from top_ten_pooled
+map <- top_pooled %>% #piping from top_pooled
   ggplot(aes(long, lat)) + #have aes as long (x) and lat (y)
   borders("state", col="grey30", fill="gainsboro") + #create map
   geom_curve(aes(x=long, y=lat, xend=la_long, yend=la_lat, color = o_cz_name), #create ling segment
@@ -104,17 +104,17 @@ map <- top_ten_pooled %>% #piping from top_ten_pooled
              alpha = 0.8, 
              linewidth = 2, 
              color = col_pal_9) +
-  # scale_color_manual(values=c("#69a9ff", "#5990d9", "#5284c8", "#4b78b5", "#436ba2", "#3c6090", "#2d4c75","#0f2745", "#293051" )) +
-  geom_point(color=ifelse(top_ten_pooled$city_state %in% c("Los Angeles-CA"), "#2d4c75", "black"), 
+  #scale_color_manual(values=c("#69a9ff", "#5990d9", "#5284c8", "#4b78b5", "#436ba2", "#3c6090", "#2d4c75","#0f2745", "#293051" )) +
+  geom_point(color=ifelse(top_pooled$city_state %in% c("Los Angeles-CA"), "#2d4c75", "black"), 
              size = 3, 
              color = "black") + #create points and specify what color the LA point is verses for the others
-  coord_quickmap() + #graph map
+  coord_quickmap() #+ #graph map
 #   labs(title = "Map of which City's Population are Moving to Los Angeles",
 # subtitle = "A view of which cities have the most migration amounts per person to Los Angeles") +
   #here I will be creating a geom_label per city to be able to control the position of each:
   #San Digeo------
 geom_label(aes(label = ifelse(city_state %in% 
-                                c("San Diego-CA"), top_ten_pooled$o_cz_name, NA)),
+                                c("San Diego-CA", "5,000"), top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -129,7 +129,7 @@ geom_label(aes(label = ifelse(city_state %in%
   #Sacramento--------
 geom_label(aes(label = ifelse(city_state %in% 
                                 c(
-                                  "Sacramento-CA"), top_ten_pooled$o_cz_name, NA)),
+                                  "Sacramento-CA"), top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -144,7 +144,7 @@ geom_label(aes(label = ifelse(city_state %in%
   #Chicago------------
 geom_label(aes(label = ifelse(city_state %in% 
                                 c(
-                                  "Chicago-IL"), top_ten_pooled$o_cz_name, NA)),
+                                  "Chicago-IL"), top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -159,7 +159,7 @@ geom_label(aes(label = ifelse(city_state %in%
   #Phoenix------------------
 geom_label(aes(label = ifelse(city_state %in% 
                                 c(
-                                  "Phoenix-AZ"), top_ten_pooled$o_cz_name, NA)),
+                                  "Phoenix-AZ"), top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -174,7 +174,7 @@ geom_label(aes(label = ifelse(city_state %in%
   #Las Vegas------------------
 geom_label(aes(label = ifelse(city_state %in% 
                                 c(
-                                  "Las Vegas-NV"), top_ten_pooled$o_cz_name, NA)),
+                                  "Las Vegas-NV"), top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -189,7 +189,7 @@ geom_label(aes(label = ifelse(city_state %in%
   #Seattle-------------------
 geom_label(aes(label = ifelse(city_state %in% 
                                 c(
-                                  "Seattle-WA"), top_ten_pooled$o_cz_name, NA)),
+                                  "Seattle-WA"), top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -204,7 +204,7 @@ geom_label(aes(label = ifelse(city_state %in%
   #New York------------------
 geom_label(aes(label = ifelse(city_state %in% 
                                 c(
-                                  "New York-NY"), top_ten_pooled$o_cz_name, NA)),
+                                  "New York-NY"), top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -217,8 +217,8 @@ geom_label(aes(label = ifelse(city_state %in%
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
   #Los Angeles----------------
-geom_label(aes(label = ifelse(top_ten_pooled$city_state %in% 
-                                c("Los Angeles-CA"),top_ten_pooled$o_cz_name, NA)),
+geom_label(aes(label = ifelse(top_pooled$city_state %in% 
+                                c("Los Angeles-CA"),top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -231,9 +231,9 @@ geom_label(aes(label = ifelse(top_ten_pooled$city_state %in%
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
   #San Francisco--------------------
-geom_label(aes(label = ifelse(top_ten_pooled$city_state %in% 
+geom_label(aes(label = ifelse(top_pooled$city_state %in% 
                                 c(
-                                  "San Francisco-CA"),top_ten_pooled$o_cz_name, NA)),
+                                  "San Francisco-CA"),top_pooled$o_cz_name, NA)),
            fill = "white",
            color = "black",
            alpha = 1, 
@@ -274,8 +274,12 @@ ggsave("map.png", plot = map, path = ("images"), width = 12, height = 8)
 ## Visual 2: Lollipop Graph
 
 ```{r visualization 2 lollipop graph}
+#create second color palette (for lollipop graph)
+col_pal_8 <- c("#0C3A0C", "#135913", "#187218", "#1D8C1D", "#20AC20", "#2ADB2A", "#8AED8A", "#9BD69B")
+
+
 #Graph two: amount of people moving to Los Angeles
-top_ten_lolli <- top_ten_pooled %>% #piping from top_ten_pooled
+top_ten_lolli <- top_pooled %>% #piping from top_pooled
   mutate(d_cz_name = forcats::fct_reorder(city_state, desc(n))) %>% #rearrange order
   filter(city_state != "Los Angeles-CA") %>% #filter by taking out Los Angeles
   ggplot(aes(x = city_state, #create the aes
@@ -314,13 +318,13 @@ top_ten_lolli
 ```{r vis 3: bar graph, warning=FALSE, message=FALSE}
 #graph three: bar graph
 #subset for only LA observation
-la_pooled <- top_ten_pooled[1,]
+la_pooled <- top_pooled[1,]
 
 #subset for all other observations
-migrate_pooled <- top_ten_pooled[2:9,] %>%
+migrate_pooled <- top_pooled[2:9,] %>%
   mutate(combined = "Cities Combined",
          total_combined = "Total Population of Cities",
-         total = sum(top_ten_pooled$n))
+         total = sum(top_pooled$n))
 
 #create bar graph for LA population
 la_bar <- ggplot(data = la_pooled, aes(x = city_state, y = n)) + #specify what datasets and aes I want to look at
@@ -380,12 +384,3 @@ combined_bar
 #save combined bargraph
 #ggsave("combined_bar.png", plot = combined_bar, path = ("images"), width = 8, height = 4)
 ```
-
-## Export finished graph
-
-```{r}
-
-
-```
-
-
