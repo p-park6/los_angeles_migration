@@ -19,6 +19,7 @@ library(scales)
 library(showtext)
 library(spatial)
 library(sf)
+library(ggrepel)
 ```
 
 ```{r}
@@ -397,27 +398,32 @@ top_race_lolli
 ```{r vis 3: bar graph, warning=FALSE, message=FALSE}
 #graph three: pie graph
 
-#---------first graph----------------
+#---------Data Manipulation for Move in Pie chart----------------
 #subset for only LA observation
-la_stayed <- top_pooled[1,] %>% 
-  mutate(travel_status = "Stayed") %>% 
-  select(travel_status, n)
+la_stayed <- top_pooled[1,] %>% # get only the first row of observations
+  mutate(travel_status = "Stayed") %>% #create a new column called travel_status with Stayed in the row
+  select(travel_status, n) #select only the travel status and n column into the new dataset
 
 #subset for all other observations
-la_movedin <- top_pooled[2:9,] %>%
-  summarise(n = sum(n)) %>% 
-  mutate(travel_status = "Moved In")
+la_movedin <- top_pooled[2:9,] %>% #select all other rows in the dataset excluding the first row
+  summarise(n = sum(n)) %>% #sum up all the amounts in the n column
+  mutate(travel_status = "Moved In") #create a new column called travel status with moved in the row
 
 
 #combine two datasets into one to make visualization
-compare_movein_pool <- full_join(la_stayed, la_movedin) %>% 
-  mutate(pop_percent = round(x = n/sum(n) *100, digits = 1))
+compare_movein_pool <- full_join(la_stayed, la_movedin) %>% #combine the two datasets into one big one
+  mutate(pop_percent = #create a new column
+           round(#use the round function to limit the numbers
+             x = n/sum(n) *100, #find the percentage of each row
+             digits = 1 #limit the rounded numbers to have one decimal
+             )#end of round function
+         )#end of mutate function
 
 #create pie graph for those that moved into LA as a placeholder
-la_pie_movein <- pie(compare_movein_pool$n, labels = compare_movein_pool$travel_status)
+#la_pie_movein <- pie(compare_movein_pool$n, labels = compare_movein_pool$travel_status)
 
 
-#------------second graph--------------------
+#------------data manipulation for move out chart--------------------
 #find out how many people left
 la_moveout_amount <- top_pooled[1,7] - top_pooled[1,6]
 
@@ -428,66 +434,77 @@ la_moveout <- data.frame(
 )
 
 #combine two datasets into one to make visualization
-compare_moveout_pool <- full_join(la_stayed, la_moveout)
+compare_moveout_pool <- full_join(la_stayed, la_moveout) %>% 
+  mutate(pop_percent = round(x = n/sum(n) *100, digits = 1))
 
 #create pie graph for those that moved out of la
-la_pie_moveout <- pie(compare_moveout_pool$n, labels = compare_moveout_pool$travel_status)
+#la_pie_moveout <- pie(compare_moveout_pool$n, labels = compare_moveout_pool$travel_status)
 
 
-#create bar graph for LA population
-la_bar <- ggplot(data = compare_movein_pool, aes(x = "", y = n, fill = travel_status)) + #specify what datasets and aes I want to look at
-  geom_bar(stat = "identity", width = 0.5, color="white") + #specify the separation between the different colors by differating them by white
+#set label position to have them appear on the pie chart. Template from #https://r-charts.com/part-whole/pie-chart-labels-outside-ggplot2/
+movein_pool_labels <- compare_movein_pool %>% 
+  mutate(csum = rev(cumsum(rev(n))), 
+         pos = n/2 + lead(csum, 1),
+         pos = if_else(is.na(pos), n/2, pos))
+
+#===============Movein to LA pie chart====================
+#create pie graph for LA population
+movein_bar <- ggplot(data = compare_movein_pool, #specify what datasets and aes I want to look at
+                 aes(x = "", #keep x blank
+                     y = rev(n), #the rev() function is used to have the labels appear on the pie chart correctly (cause the pie chart will be seen on the other side instead of the correct side)
+                     fill = travel_status)) + #fill will be the travel status since are separating those apart
+  geom_bar(stat = "identity", #set stat
+           width = 0.5, #line width
+           color="white", ##specify the separation between the different colors by differentiating them by white
+           fill = c("pink", "green")) + #fill are colors that I think is the best color scheme
   coord_polar("y", start=0) + #set this parameter to create a pie chart
-  scale_fill_brewer(palette=4) +
-  geom_label_repel(aes(label = paste0(pop_percent, "%")), position = position_stack(vjust=0.5)) + #label for those that stayed in LA
-  #geom_text(aes(label = paste0(n, "%")), position = position_stack(vjust=0.5), vjust = 5) + #label for those that moved into LA
+  geom_label_repel(data = movein_pool_labels,
+                   aes(y = rev(pos), 
+                       label = paste0(rev(pop_percent), "%")),
+                   size = 4.5, 
+                   nudge_x = 0.5, 
+                   show.legend = FALSE, 
+                   fill = c("pink", "green")) +
   theme_void() +
   theme(legend.position="none") #have text show up on the graph itself and not just a side bar
-  #edit theme to preference:
-  # theme(
-  #   panel.background = element_blank(), #take out panel
-  #   axis.title.x = element_blank(), #take out x axis title
-  #   axis.title.y = element_blank(), #take out y axis title
-  #   plot.title.position = "plot", #reposition plot title
-  #   axis.text.y = element_blank(), #take out y axis text
-  #   axis.text.x = element_text(size = 13), #change x axis font size
-  #   axis.ticks.y = element_blank(), #take out y axis ticks
-  #   axis.ticks.x = element_blank(), #take out x axis ticks
-  #   plot.background = element_rect(fill='transparent', color = NA), #make transparent
-  #   panel.border = element_blank(), #take out panel
-  #   panel.grid = element_blank(), #take out grid
-  #   plot.margin = margin(r = 1) #shift right side margin
-  # )
 
-#create bar graph on combined cities population
-bot_cities_bar_controlled_y <- ggplot() +
-  geom_col(data = migrate_pooled, aes(fill = city_state, y = n, x = combined), width = 0.5, position = position_stack(vjust = 1), fill = "black") + #create columns to make them stack on top of each other
-  scale_y_continuous(limits = c(0, 1800000)) +  #set y axis to be consistent with other graph
-  guides(fill=guide_legend(title="Cities")) + #set titles 
-  annotate("text", x = 1, y=160000, label = "85,286") + #add label to show total combined population
-  #edit theme as before
-  theme(
-    panel.background = element_blank(),
-    axis.title.y = element_blank(),
-    axis.title.x = element_blank(),
-    plot.background = element_rect(fill='transparent', color=NA),
-    axis.text.y = element_blank(),
-    axis.text.x = element_text(size = 13),
-    legend.title = element_text(size = 25),
-    legend.text = element_text(size = 20),
-    axis.ticks.y = element_blank(),
-    axis.ticks.x = element_blank(),
-    legend.position = "none",
-    panel.border = element_blank(),
-    panel.grid = element_blank()
-  )
+
+
+
+#===================Move out of LA pie chart=====================
+#set label position to have them appear on the pie chart. Template from #https://r-charts.com/part-whole/pie-chart-labels-outside-ggplot2/
+moveout_pool_labels <- compare_moveout_pool %>% 
+  mutate(csum = rev(cumsum(rev(n))), 
+         pos = n/2 + lead(csum, 1),
+         pos = if_else(is.na(pos), n/2, pos))
+
+
+moveout_bar <- ggplot(data = compare_moveout_pool, #specify what datasets and aes I want to look at
+                 aes(x = "", #keep x blank
+                     y = rev(n), #the rev() function is used to have the labels appear on the pie chart correctly (cause the pie chart will be seen on the other side instead of the correct side)
+                     fill = travel_status)) + #fill will be the travel status since are separating those apart
+  geom_bar(stat = "identity", #set status
+           width = 0.5, #line width
+           color="white", ##specify the separation between the different colors by differentiating them by white
+           fill = c("pink", "green")) + #fill are colors that I think is the best color scheme
+  coord_polar("y", start=0) + #set this parameter to create a pie chart
+  geom_label_repel(data = moveout_pool_labels,
+                   aes(y = rev(pos), 
+                       label = paste0(rev(pop_percent), "%")),
+                   size = 10, 
+                   nudge_x = 0.5, 
+                   show.legend = FALSE, 
+                   fill = c("pink", "green")) +
+  theme_void() +
+  theme(legend.position="none") #have text show up on the graph itself and not just a side bar
+
 
 #view bar graphs
 # la_bar
 # bot_cities_bar_controlled_y
 
 #combine the bar graphs with patchwork
-combined_bar <- (la_bar + bot_cities_bar_controlled_y) +
+combined_bar <- (movein_bar + bot_cities_bar_controlled_y) +
   plot_annotation(theme = theme(plot.background = element_rect(fill='transparent', color=NA)))
 
 #view combined bargraph
