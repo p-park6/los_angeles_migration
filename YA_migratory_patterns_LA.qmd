@@ -11,15 +11,17 @@ editor_options:
 ---
 
 ```{r, warning=FALSE, message=FALSE}
-library(tidyverse)
+library(tidyverse) #read in basic packages
 library(states)
 library(maps)
 library(patchwork)
-library(scales)
+library(scales) #read in package to help with number formatting
 library(showtext)
 library(spatial)
 library(sf)
 library(ggrepel)
+library(gt)
+library(kableExtra)
 ```
 
 ```{r}
@@ -49,42 +51,54 @@ od_pooled <- read_csv("data/od_pooled.csv") #dataset technically not 'separated'
 
 Here I will reshape the datasets to what I would like to output on the graph. I'll go ahead and transform all four datasets for practice and to give me more flexibility for what I would like to create for my exploratory graphs.
 
-```{r}
-#create a new dataframe for state info
-state_info <- tibble(state.name, state.region, state.abb) %>% 
-  rename(o_state_name = state.name)
-```
-
 ```{r data manipulation}
-
 #=============Data Manipulation=====================
-
+#Looking at the top cities of those that move to LA
 # Most popular cities not separated by a certain factor
 top_pooled <- od_pooled %>% #using od_pooled
   select(o_cz_name, o_state_name, d_cz_name, d_state_name, n, n_tot_o, pool) %>%#select columns we are interested in, helps get rid of repeats
   filter(d_cz_name == "Los Angeles") %>% 
   distinct() %>% #gets rid of repeats in the dataset
-  slice_max(n, n = 10) %>%  #find the top 10 most popular cities if applicable
-  left_join(state_info, by = "o_state_name") %>%  #left join with state_info dataset to get regions of each state
+  slice_max(n, n = 10) #find the top 10 most popular cities if applicable
+```
+
+
+```{r data manipulation}
+#---Want to combine San Francisco and San Jose together as Bay Area---
+#add the two from the n column to see how many people total left the bay area to move to Los Angeles
+bay_area_amount <- top_pooled[3,5] + top_pooled[6,5] #first one is San Francisco, Second one is San Jose
+
+#change the amount in San Francisco to the amount for the whole bay area
+top_pooled$n[top_pooled$o_cz_name == "San Francisco"] <- bay_area_amount
+
+#Change San Francisco to Bay area
+top_pooled[3,1] <- "Bay Area"
+
+#mutate the n column to be a numeric class
+top_pooled$n = as.numeric(top_pooled$n)
+```
+
+
+```{r data manipulation}
+#finish manipulating the dataset by taking out San Jose, Format the numbers correctly, and Add coordinates for it to appear on the map correctly
+top_pooled <- top_pooled %>% 
+  filter(o_cz_name != "San Jose") %>%  #get rid of San Jose since there is a San Francisco already on the map and it is already crowded
+  arrange(desc(n)) %>% #arrange the columns in n from largest to smallest so the numbers will be formatted correctly
   mutate(n_formatted = number(n, big.mark = ",")) %>% #adds commas to the numbers so they are formatted correctly (ex. 2,000 instead of 2000)
   #add coordinates to dataset to be able to map correctly
   #the first long lat are for markers for the cities
-  mutate(long = c(-118, -117, -122, -121, -88, -121, -112, -115, -122, -74),
-         lat = c(34, 33, 37, 38, 42, 37, 33, 36.3, 47, 40.5),
+  mutate(long = c(-118, -117, -122, -121, -88, -112, -115, -122, -74),
+         lat = c(34, 33, 37, 38, 42, 33, 36.3, 47, 40.5),
           #the la long lat are for where LA is so when map is made, the connecting line can be made correctly, connecting the two cities together
          #the first -118.001 has to be a different number for the map to correctly graph and not have an error on it
-         la_long = c(-118.001, -118, -118, -118, -118, -118, -118, -118, -118, -118), 
-         la_lat = c(34, 34, 34, 34, 34, 34, 34, 34, 34, 34)
+         la_long = c(-118.001, -118, -118, -118, -118, -118, -118, -118, -118), 
+         la_lat = c(34, 34, 34, 34, 34, 34, 34, 34, 34)
   )
-
-#can get total white people that moved to LA if
-# - get all race information from the od dataset,
-# - add all of them up unique to the city they are coming from
-# - join them to the other dataset (if needed) and use that to find out the race amount per city
+```
 
 
-
-# get total amount of
+```{r data manipulation}
+# get total amount of those that moved to Los Angeles separated by race
 top_pooled_race <- od %>% 
   select(o_cz_name, o_state_name, d_cz_name, d_state_name, n, n_tot_o, pool) %>%#select columns we are interested in, helps get rid of repeats
   filter(d_cz_name == "Los Angeles" & o_cz_name %in% c("San Diego", "San Francisco", "Sacramento", "Chicago", "Phoenix", "Las Vegas", "Seattle", "New York")) %>% #get the cities we are interested in from top_pooled dataset
@@ -102,50 +116,50 @@ top_pooled_race <- od %>%
     total = sum(n_tot) #add up all the total amount of races that moved to los angeles
   ) %>% 
   mutate(n_formatted = number(total, big.mark = ",")) #adds commas to the numbers so they are formatted correctly (ex. 2,000 instead of 2000)
+```
 
 
+```{r data manipulation}
+#create a new dataset to be used to make the table
+top_pooled_table <- top_pooled
 
-
-#replace na with Northeast
-top_pooled$state.region <- top_pooled$state.region %>%
-  replace_na('Northeast')
-
-#replace na with dc
-top_pooled$state.abb <- top_pooled$state.abb %>%
-  replace_na('DC')
-
-#unite the city and state name together into its own column
-top_pooled <- top_pooled %>%
-  unite("city_state", o_cz_name, state.abb, sep = "-", remove = FALSE)%>%
-  filter(city_state != "San Jose-CA")
-
-
-#view wrangled dataset: uncomment to view dataset
-#View(top_pooled)
+#create a table to be placed next to the map on the visualization
+top_pooled_table %>% #pipe from top_pooled
+  select(o_cz_name, n_formatted) %>% #select the two columns, o_cz_name, n
+  rename(City = o_cz_name, #rename o_cz_name to City
+         `Amount (Per Person)` = n_formatted) %>% 
+  gt() %>% #create new table with gt package
+  tab_header(
+    title = md("**Top Cities Migrating to Los Angeles**"), #create a new title
+    subtitle = md("*Showing what cities tend to move to Los Angeles with their amounts per person*") #create a subtitle to go with it
+  ) %>% 
+  opt_table_font( #change the font style
+    font = google_font(name = "Merriweather")
+  ) %>% 
+  tab_options(column_labels.background.color = "grey93") #change the color of the columns place
 ```
 
 ## Visual 1: Map
 
 ```{r vis 1 map}
-#create first color palette (for map)
-# col_pal_9 <- c("black", "#0C3A0C", "#135913", "#187218", "#1D8C1D", "#20AC20", "#2ADB2A", "#48FE48", "#8AED8A")
-
-
 #create map
 map <- top_pooled %>% #piping from top_pooled
   ggplot(aes(long, lat)) + #have aes as long (x) and lat (y)
-  borders("state", col="grey30", fill="#F8E6C9") + #create map
+  borders("state", col="grey30", fill="grey92") + #create map
   geom_curve(aes(x=long, y=lat, xend=la_long, yend=la_lat, color = o_cz_name), #create ling segment
              curvature = 0.1, 
              alpha = 0.8, 
              linewidth = 1.5, 
-             color = "black") + #or use color palette 'col_pal_9'
+             color = "#dd5454ff") + #or use color palette 'col_pal_9'
   #scale_color_manual(values=c("#69a9ff", "#5990d9", "#5284c8", "#4b78b5", "#436ba2", "#3c6090", "#2d4c75","#0f2745", "#293051" )) +
-  geom_point(fill=ifelse(top_pooled$city_state %in% c("Los Angeles-CA"), "#2d4c75", "black"), #fill of the point
-             size = 5, #size of the point
-             color = "white", #outline of the shape
+  geom_point(fill=ifelse(top_pooled$city_state %in% 
+                           c("Los Angeles-CA"), 
+                         "#ffe599ff", 
+                         "#dd5454ff"), #fill of the point
+             size = 4, #size of the point
+             color = "black", #outline of the shape
              shape = ifelse(top_pooled$city_state %in% c("Los Angeles-CA"), 24, 21), #what shape the point will be
-             stroke = 1.5) + #thickness of the outline of the point
+             stroke = 1) + #thickness of the outline of the point
   #create points and specify what color the LA point is verses for the others
   coord_quickmap() + #graph map
 #   labs(title = "Map of which City's Population are Moving to Los Angeles",
@@ -157,12 +171,12 @@ geom_label(aes(label = ifelse(city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 7.5, 
            force = 3,
            show.legend = FALSE,
            point.padding = 3,
-           nudge_y = -1.1,
-           nudge_x = 1,
+           nudge_y = -1.3,
+           nudge_x = 1.2,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
   #Sacramento--------
@@ -172,11 +186,11 @@ geom_label(aes(label = ifelse(city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 8, 
            force = 3,
            show.legend = FALSE,
            point.padding = 3,
-           nudge_y = 1,
+           nudge_y = 1.3,
            nudge_x = 1.5,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
@@ -187,11 +201,11 @@ geom_label(aes(label = ifelse(city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 8, 
            force = 3,
            show.legend = FALSE,
            point.padding = 3,
-           nudge_y = 1,
+           nudge_y = 1.3,
            nudge_x = 1,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
@@ -202,11 +216,11 @@ geom_label(aes(label = ifelse(city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 8, 
            force = 3,
            show.legend = FALSE,
            point.padding = 3,
-           nudge_y = 1,
+           nudge_y = 1.3,
            nudge_x = 1.3,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
@@ -217,11 +231,11 @@ geom_label(aes(label = ifelse(city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 8, 
            force = 3,
            show.legend = FALSE,
            point.padding = 3,
-           nudge_y = 1,
+           nudge_y = 1.3,
            nudge_x = 1,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
@@ -232,11 +246,11 @@ geom_label(aes(label = ifelse(city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 8, 
            force = 3,
            show.legend = FALSE,
            point.padding = 3,
-           nudge_y = 1,
+           nudge_y = 1.3,
            nudge_x = 0,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
@@ -246,11 +260,11 @@ geom_label(aes(label = ifelse(city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 8, 
            force = 3,
            show.legend = FALSE,
            point.padding = 3,
-           nudge_y = 1,
+           nudge_y = 1.3,
            nudge_x = 1,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
@@ -260,12 +274,12 @@ geom_label(aes(label = ifelse(top_pooled$city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 8, 
            force = 3,
            show.legend = FALSE,
            point.padding = 5,
-           nudge_y = -0.8,
-           nudge_x = -3,
+           nudge_y = -0.6,
+           nudge_x = -3.4,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
   #San Francisco--------------------
@@ -274,12 +288,12 @@ geom_label(aes(label = ifelse(top_pooled$city_state %in%
            fill = "white",
            color = "black",
            alpha = 1, 
-           size = 6, 
+           size = 8, 
            force = 3,
            show.legend = FALSE,
            point.padding = 5,
-           nudge_y = -1,
-           nudge_x = -1.5,
+           nudge_y = -1.2,
+           nudge_x = -2.7,
            arrow = arrow(length = unit(1, "cm")),
            max.overlaps = 20) +
   theme_void() + #have theme as void
@@ -299,10 +313,10 @@ geom_label(aes(label = ifelse(top_pooled$city_state %in%
   )
 
 #print map
-map
+#map
 
 #save image
-#ggsave("map.png", plot = map, path = ("images"), width = 12, height = 8)
+ggsave("map.png", plot = map, path = ("images"), width = 10, height = 8)
 
 
 
@@ -316,63 +330,69 @@ map
 
 
 #Graph two: amount of people moving to Los Angeles
-top_race_lolli <- top_pooled_race %>% #piping from top_pooled_race
-  mutate(reorder = forcats::fct_reorder(race, total)) %>% #rearrange order from largest on the top to smallest on the bottom
-  #filter(city_state != "Los Angeles-CA") %>% #dont need it;filter by taking out Los Angeles
-  ggplot(aes(x = race, #create the aes
-             y = total)) +
-  geom_segment(aes(x=reorder, 
-                   xend=reorder, 
-                   y=0, 
-                   yend=total), #specify the length of each stick
-               size = 10, 
-               alpha = 1,
-               color = "black") +
-  # geom_point(size= 10, #specify where the points are located on the graph
-  #            color= "black", 
-  #            fill= "black") + #alpha("#8AD78A", 0.3), alpha=0.7, shape=21, stroke=2) +
-  coord_flip() +
-  geom_text(aes(label = n_formatted), 
-            vjust = -1.8, 
-            family = "merri", 
-            size = 6) + #add text showing the amount per lollipop graph
-  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) + #make sure the y axis is long enough
-  #create a hispanic text and place it in the correct box (want it inside)
-  geom_text(label = ifelse(top_pooled_race$race %in% c("White"), 
-                           top_pooled_race$race,
-                           NA),
-            color = "darkgrey",
-            size = 6,
-            hjust = 3, 
-            family = "merri") +
+top_race_bar <- top_pooled_race %>% #piping from top_pooled_race
+  mutate(reorder = forcats::fct_reorder(race, total)) %>% #rearrange order from largest on the top to smallest on the bottom using forcats package
+  ggplot(aes(x = race, #x axis is race
+             y = total)) + #y axis is total
+  #create the bar charts using geom_segment (can also use other functions like geom_bar or geom_col). This is to specify the length of each stick
+  geom_segment(aes(x=reorder, #use the reorder column (for the race)
+                   xend=reorder, #use the reorder column to indicate where to end (for the race)
+                   y=0, #start at 0 for why
+                   yend=total), #end at the total amount
+               size = 10, #size of columns
+               alpha = 1, #the transparency amount
+               color = "#f1c232ff") + #color of the columns
+  coord_flip() + #flip so the bars are horizontal instead of vertical
+  #create the text for the numbers to appear on the bar chart
+  geom_text(aes(label = n_formatted), #labels are the n_formatted which includes the numbers with the commas
+            vjust = 0.4, #adjust where the location is
+            hjust = -0.3, 
+            family = "merri", #change the font family
+            size = 8, #choose the size of the number font
+            color = "black"
+            ) + #end of geom_text for numbers
+  #--create a 'White' text and place it with the correct bar--
+  geom_text(label = ifelse(top_pooled_race$race %in% c("White"), #if white is in the column put it on the bar corresponding with white
+                           top_pooled_race$race, #else if it is just another race
+                           NA #dont put anything in it
+                           ), #end of ifelse for 'White'
+            color = "black", #color for bar
+            size = 9, #size of text
+            hjust = 15.3, #position of text
+            family = "merri") + #font of text
+  #--create a 'Hispanic' text and place it with the correct bar--
   geom_text(label = ifelse(top_pooled_race$race %in% c("Hispanic"), 
                            top_pooled_race$race,
                            NA),
-            color = "darkgrey",
-            size = 6,
-            hjust = 3, 
+            color = "black",
+            size = 9,
+            hjust = 4.2, 
             family = "merri") +
+  #create a 'Other' text and place it with the correct bar
   geom_text(label = ifelse(top_pooled_race$race %in% c("Other"), 
                            top_pooled_race$race,
                            NA),
-            color = "darkgrey",
-            size = 6,
-            hjust = 3, 
+            color = "black",
+            size = 9,
+            hjust = 2.8, 
             family = "merri") +
+  #create a 'Black' text and place it with the correct bar
   geom_text(label = ifelse(top_pooled_race$race %in% c("Black"), 
                            top_pooled_race$race,
                            NA),
-            color = "darkgrey",
-            size = 6,
-            hjust = 3, 
+            color = "black",
+            size = 9,
+            hjust = 2.6, 
             family = "merri") +
+  #create a 'Asian' text and place it with the correct bar
   geom_text(label = ifelse(top_pooled_race$race %in% c("Asian"), 
                            top_pooled_race$race,
                            NA),
-            color = "darkgrey",
-            size = 6,
-            hjust = 3, 
+            color = "black",
+            size = 9,
+            hjust = 2.2, 
             family = "merri") +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.1))) + #make sure the y axis is long enough
   # Theme edits:
   theme(axis.text.y = element_blank(), #take out y axis text
         axis.title.y = element_blank(), #take out y axis title
@@ -385,17 +405,15 @@ top_race_lolli <- top_pooled_race %>% #piping from top_pooled_race
         plot.background = element_rect(fill = "transparent", color = NA) #make background transparent
   )
 
-#print graphic
-top_race_lolli
 
 #save graphic
-#ggsave("top_ten_lolli.png", plot = top_ten_lolli, path = ("images"), width = 10, height = 7)
+ggsave("top_race_bar.png", plot = top_race_bar, path = ("images"), width = 6, height = 3)
 
 ```
 
 ## Visual 3: bar graph
 
-```{r vis 3: bar graph, warning=FALSE, message=FALSE}
+```{r vis 3: pie graph, warning=FALSE, message=FALSE}
 #graph three: pie graph
 
 #---------Data Manipulation for Move in Pie chart----------------
@@ -424,50 +442,58 @@ compare_movein_pool <- full_join(la_stayed, la_movedin) %>% #combine the two dat
 
 
 #------------data manipulation for move out chart--------------------
-#find out how many people left
-la_moveout_amount <- top_pooled[1,7] - top_pooled[1,6]
+#find out how many people left by subtracting total amount LA population by those that stayed
+la_moveout_amount <- top_pooled[1,7] - top_pooled[1,6] 
+#amount total is 355308
 
 #create a new dataframe with the information gathered
-la_moveout <- data.frame(
-  travel_status = "Moved Out",
-  n = 355308
+la_moveout <- data.frame( #creating a new dataframe
+  travel_status = "Moved Out", #create a new column called travel status with moved out in its row
+  n = 355308 #create a new column called n with 355308 in its row
 )
 
 #combine two datasets into one to make visualization
-compare_moveout_pool <- full_join(la_stayed, la_moveout) %>% 
-  mutate(pop_percent = round(x = n/sum(n) *100, digits = 1))
+compare_moveout_pool <- full_join(la_stayed, la_moveout) %>% #join the two datasets together
+  mutate(pop_percent = #create a new column for percent
+           round(#use the round function to limit how many decimal points show up
+             x = n/sum(n) *100, #find the percentage
+                 digits = 1 #limit the decimal points by 1
+             )#end of round function
+         )#end of mutate function
 
 #create pie graph for those that moved out of la
 #la_pie_moveout <- pie(compare_moveout_pool$n, labels = compare_moveout_pool$travel_status)
 
 
+
+#===============Movein to LA pie chart====================
 #set label position to have them appear on the pie chart. Template from #https://r-charts.com/part-whole/pie-chart-labels-outside-ggplot2/
 movein_pool_labels <- compare_movein_pool %>% 
   mutate(csum = rev(cumsum(rev(n))), 
          pos = n/2 + lead(csum, 1),
          pos = if_else(is.na(pos), n/2, pos))
 
-#===============Movein to LA pie chart====================
+
 #create pie graph for LA population
-movein_bar <- ggplot(data = compare_movein_pool, #specify what datasets and aes I want to look at
+movein_pie <- ggplot(data = compare_movein_pool, #specify what datasets and aes I want to look at
                  aes(x = "", #keep x blank
                      y = rev(n), #the rev() function is used to have the labels appear on the pie chart correctly (cause the pie chart will be seen on the other side instead of the correct side)
                      fill = travel_status)) + #fill will be the travel status since are separating those apart
   geom_bar(stat = "identity", #set stat
            width = 0.5, #line width
            color="white", ##specify the separation between the different colors by differentiating them by white
-           fill = c("pink", "green")) + #fill are colors that I think is the best color scheme
+           fill = c("#e87a7aff", "#ffe599ff")) + #fill are colors that I think is the best color scheme
   coord_polar("y", start=0) + #set this parameter to create a pie chart
-  geom_label_repel(data = movein_pool_labels,
-                   aes(y = rev(pos), 
-                       label = paste0(rev(pop_percent), "%")),
-                   size = 4.5, 
-                   nudge_x = 0.5, 
-                   show.legend = FALSE, 
-                   fill = c("pink", "green")) +
-  theme_void() +
+  geom_label_repel(data = movein_pool_labels, # data is from new dataset that has label positions
+                   aes(y = rev(pos), #reverse the positions to make everything consistent
+                       label = paste0(rev(pop_percent), "%")), #create labels and include the reverse function to made everything consistent
+                   size = 10, #size of labels
+                   nudge_x = 0.5, #move the labels for how far I want it from the pie chart
+                   show.legend = FALSE, #get rid of legend
+                   fill = c("#e87a7aff", "#ffe599ff"), #create the color scheme
+                   family = "merri") + #change font style
+  theme_void() + #get rid of background lines
   theme(legend.position="none") #have text show up on the graph itself and not just a side bar
-
 
 
 
@@ -479,37 +505,28 @@ moveout_pool_labels <- compare_moveout_pool %>%
          pos = if_else(is.na(pos), n/2, pos))
 
 
-moveout_bar <- ggplot(data = compare_moveout_pool, #specify what datasets and aes I want to look at
+moveout_pie <- ggplot(data = compare_moveout_pool, #specify what datasets and aes I want to look at
                  aes(x = "", #keep x blank
                      y = rev(n), #the rev() function is used to have the labels appear on the pie chart correctly (cause the pie chart will be seen on the other side instead of the correct side)
                      fill = travel_status)) + #fill will be the travel status since are separating those apart
   geom_bar(stat = "identity", #set status
            width = 0.5, #line width
            color="white", ##specify the separation between the different colors by differentiating them by white
-           fill = c("pink", "green")) + #fill are colors that I think is the best color scheme
+           fill = c("#e87a7aff", "#ffe599ff")) + #fill are colors that I think is the best color scheme
   coord_polar("y", start=0) + #set this parameter to create a pie chart
-  geom_label_repel(data = moveout_pool_labels,
-                   aes(y = rev(pos), 
-                       label = paste0(rev(pop_percent), "%")),
-                   size = 10, 
-                   nudge_x = 0.5, 
-                   show.legend = FALSE, 
-                   fill = c("pink", "green")) +
-  theme_void() +
+  geom_label_repel(data = moveout_pool_labels,# data is from new dataset that has label positions
+                   aes(y = rev(pos), #reverse the positions to make everything consistent
+                       label = paste0(rev(pop_percent), "%")), #create labels and include the reverse function to made everything consistent
+                   size = 10, #size of labels
+                   nudge_x = 0.5, #move the labels for how far I want it from the pie chart
+                   show.legend = FALSE, #get rid of legend
+                   fill = c("#e87a7aff", "#ffe599ff"), #create the color scheme
+                   family = "merri") + #change font style
+  theme_void() + #get rid of background lines
   theme(legend.position="none") #have text show up on the graph itself and not just a side bar
 
 
-#view bar graphs
-# la_bar
-# bot_cities_bar_controlled_y
-
-#combine the bar graphs with patchwork
-combined_bar <- (movein_bar + bot_cities_bar_controlled_y) +
-  plot_annotation(theme = theme(plot.background = element_rect(fill='transparent', color=NA)))
-
-#view combined bargraph
-combined_bar
-
-#save combined bargraph
-#ggsave("combined_bar.png", plot = combined_bar, path = ("images"), width = 8, height = 4)
+#save both pie chart graphs
+ggsave("movein_pie.png", plot = movein_pie, path = ("images"), width = 4, height = 4)
+ggsave("moveout_pie.png", plot = moveout_pie, path = ("images"), width = 4, height = 4)
 ```
